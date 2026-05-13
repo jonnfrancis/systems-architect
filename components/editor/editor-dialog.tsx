@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 
 import {
   DialogContent,
@@ -11,12 +11,12 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-interface EditorDialogContentProps {
+interface EditorDialogContentProps
+  extends ComponentProps<typeof DialogContent> {
   title: string;
   description?: string;
   footer?: ReactNode;
   children?: ReactNode;
-  className?: string;
 }
 
 export function EditorDialogContent({
@@ -25,10 +25,12 @@ export function EditorDialogContent({
   footer,
   children,
   className,
+  ...props
 }: EditorDialogContentProps) {
   return (
     <DialogContent
       className={cn("border-surface-border bg-elevated", className)}
+      {...props}
     >
       <DialogHeader>
         <DialogTitle className="text-copy-primary">{title}</DialogTitle>
