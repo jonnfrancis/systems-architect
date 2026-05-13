@@ -1,10 +1,5 @@
-import { Button } from "@/components/ui/button";
+import { EditorShell } from "@/components/editor/editor-shell";
 
 export default function Home() {
-  return (
-    <div className="min-h-screen text-3xl flex items-center justify-center">
-      Systems Architecture
-      <Button variant="outline">Hello</Button>
-    </div>
-  );
+  return <EditorShell />;
 }
