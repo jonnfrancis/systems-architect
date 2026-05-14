@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
 import type { ProjectSummary } from "@/types/project";
+import { toast } from "react-hot-toast";
 
 type DialogMode = "create" | "rename" | "delete";
 
@@ -27,23 +28,30 @@ function slugify(value: string) {
 }
 
 function createShortSuffix() {
-  const values = new Uint8Array(4);
+  const chars = "0123456789abcdefghijklmnopqrstuvwxyz";
+  let result = "";
+  const values = new Uint8Array(6);
   crypto.getRandomValues(values);
 
-  return Array.from(values, (value) => value.toString(36).padStart(2, "0"))
-    .join("")
-    .slice(0, 6);
+  for (const value of values) {
+    result += chars[value % chars.length];
+  }
+
+  return result;
 }
 
 async function readProjectResponse(response: Response) {
+  const data = await response.json().catch(() => null);
+
   if (!response.ok) {
-    throw new Error("Project request failed.");
+    const message = data?.message ?? "Project request failed.";
+    throw new Error(message);
   }
 
-  return (await response.json()) as ProjectResponse;
+  return data as ProjectResponse;
 }
 
-export function createRoomId(projectName: string, suffix: string) {
+function createRoomId(projectName: string, suffix: string) {
   return `${slugify(projectName)}-${suffix}`;
 }
 
@@ -114,6 +122,8 @@ export function useProjectActions() {
             name: nextName,
           }),
         });
+
+        // Let readProjectResponse throw a descriptive error
         const { project } = await readProjectResponse(response);
 
         router.push(`/editor/${project.id}`);
@@ -152,6 +162,10 @@ export function useProjectActions() {
 
         router.refresh();
       }
+    } catch (err: unknown) {
+      console.error(err);
+      const message = err instanceof Error ? err.message : "Project request failed.";
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

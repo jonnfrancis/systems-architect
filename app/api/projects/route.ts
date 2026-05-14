@@ -60,14 +60,19 @@ export async function POST(request: Request) {
   const projectId =
     typeof body.id === "string" ? body.id.trim() : undefined;
 
-  const project = await prisma.project.create({
-    data: {
-      id: projectId,
-      ownerId: userId,
-      name,
-    },
-    select: projectSelect,
-  });
+  try {
+    const project = await prisma.project.create({
+      data: {
+        id: projectId,
+        ownerId: userId,
+        name,
+      },
+      select: projectSelect,
+    });
 
-  return Response.json({ project }, { status: 201 });
+    return Response.json({ project }, { status: 201 });
+  } catch {
+    // Handle unique constraint violation (duplicate project id)
+    return jsonError("Project ID already exists.", 409);
+  }
 }

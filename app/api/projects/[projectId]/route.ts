@@ -1,4 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 
 import {
   findProjectOwner,
@@ -38,13 +39,20 @@ export async function PATCH(request: Request, context: ProjectRouteContext) {
     return jsonError("Project name is required.", 400);
   }
 
-  const project = await prisma.project.update({
-    where: { id: projectId },
-    data: { name: body.name.trim() },
-    select: projectSelect,
-  });
+  try {
+    const project = await prisma.project.update({
+      where: { id: projectId },
+      data: { name: body.name.trim() },
+      select: projectSelect,
+    });
 
-  return Response.json({ project });
+    revalidatePath("/editor");
+
+    return Response.json({ project });
+  } catch (err: unknown) {
+    console.error("Error updating project:", err);
+    return jsonError("Failed to update project.", 500);
+  }
 }
 
 export async function DELETE(_request: Request, context: ProjectRouteContext) {
@@ -65,10 +73,17 @@ export async function DELETE(_request: Request, context: ProjectRouteContext) {
     return jsonError("Forbidden", 403);
   }
 
-  const project = await prisma.project.delete({
-    where: { id: projectId },
-    select: projectSelect,
-  });
+  try {
+    const project = await prisma.project.delete({
+      where: { id: projectId },
+      select: projectSelect,
+    });
 
-  return Response.json({ project });
+    revalidatePath("/editor");
+
+    return Response.json({ project });
+  } catch (err: unknown) {
+    console.error("Error deleting project:", err);
+    return jsonError("Failed to delete project.", 500);
+  }
 }

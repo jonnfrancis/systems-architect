@@ -26,7 +26,7 @@ export async function parseJsonObject(request: Request) {
     const text = await request.text();
 
     if (text.trim().length === 0) {
-      return {};
+      return null;
     }
 
     const body: unknown = JSON.parse(text);
