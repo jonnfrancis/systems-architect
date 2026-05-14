@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Project dialogs complete
+- Prisma data layer complete
 
 ## Current Goal
 
@@ -40,6 +40,12 @@ Update this file whenever the current phase, active feature, or implementation s
   - Wired sidebar create, rename, and delete actions using mock project data.
   - Hid project actions for shared/collaborator projects.
   - Added mobile sidebar backdrop scrim with outside-tap close behavior.
+- Feature spec 05 Prisma:
+  - Added `Project` and `ProjectCollaborator` models with `ProjectStatus`.
+  - Added required relations, cascade delete, indexes, and unique project/email collaborator constraint.
+  - Added cached Prisma singleton in `lib/prisma.ts`.
+  - Ran first migration: `20260514092828_init`.
+  - Generated Prisma Client.
 
 ## In Progress
 
@@ -71,3 +77,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - Started implementation of `context/feature-specs/04-project-dialogs.md`.
 - Added editor home CTA, mock project state hook, project dialogs, owner-only sidebar actions, and mobile sidebar scrim.
 - Verification for feature 04: `tsc --noEmit` passed and `npm.cmd run lint` passed.
+- Started implementation of `context/feature-specs/05-prisma.md`.
+- Added `prisma/models/project.prisma` and `lib/prisma.ts` with Prisma Postgres/Accelerate and direct Postgres branching.
+- Ran `prisma format`, `prisma validate`, `prisma migrate dev --name init`, and `prisma generate`.
+- Verification for feature 05: `tsc --noEmit`, `npm.cmd run lint`, and `npm.cmd run build` passed. Build required elevated network access to fetch Next Google fonts.
