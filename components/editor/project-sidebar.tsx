@@ -1,28 +1,29 @@
 "use client";
 
+import Link from "next/link";
 import { Pencil, PanelLeftClose, Plus, Trash2 } from "lucide-react";
 
-import type { MockProject } from "@/hooks/use-project-dialogs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import type { ProjectSummary } from "@/types/project";
 
 interface ProjectSidebarProps {
   isOpen: boolean;
-  ownedProjects: MockProject[];
-  sharedProjects: MockProject[];
+  ownedProjects: ProjectSummary[];
+  sharedProjects: ProjectSummary[];
   onClose: () => void;
   onCreateProject: () => void;
-  onDeleteProject: (project: MockProject) => void;
-  onRenameProject: (project: MockProject) => void;
+  onDeleteProject: (project: ProjectSummary) => void;
+  onRenameProject: (project: ProjectSummary) => void;
 }
 
 interface ProjectListProps {
-  projects: MockProject[];
+  projects: ProjectSummary[];
   showActions?: boolean;
-  onDeleteProject: (project: MockProject) => void;
-  onRenameProject: (project: MockProject) => void;
+  onDeleteProject: (project: ProjectSummary) => void;
+  onRenameProject: (project: ProjectSummary) => void;
 }
 
 function EmptyProjectsState({ label }: { label: string }) {
@@ -30,7 +31,7 @@ function EmptyProjectsState({ label }: { label: string }) {
     <div className="flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-surface-border bg-subtle/45 px-5 text-center">
       <p className="text-sm font-medium text-copy-primary">{label}</p>
       <p className="mt-2 max-w-48 text-sm leading-6 text-copy-muted">
-        Project lists will appear here once project storage is connected.
+        Create a workspace or accept an invite to see projects here.
       </p>
     </div>
   );
@@ -53,14 +54,14 @@ function ProjectList({
           key={project.id}
           className="group flex items-center justify-between gap-3 rounded-2xl border border-surface-border bg-subtle/45 px-3 py-3"
         >
-          <div className="min-w-0">
+          <Link href={`/editor/${project.id}`} className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium text-copy-primary">
               {project.name}
             </p>
             <p className="mt-1 truncate font-mono text-xs text-copy-muted">
-              {project.slug}
+              {project.id}
             </p>
-          </div>
+          </Link>
 
           {showActions ? (
             <div className="flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">

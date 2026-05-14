@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Prisma data layer complete
+- Editor home project API wiring complete
 
 ## Current Goal
 
-- Ready to select the next implementation feature unit.
+- Ready to build the `/editor/[roomId]` workspace shell in the next feature unit.
 
 ## Completed
 
@@ -46,6 +46,19 @@ Update this file whenever the current phase, active feature, or implementation s
   - Added cached Prisma singleton in `lib/prisma.ts`.
   - Ran first migration: `20260514092828_init`.
   - Generated Prisma Client.
+- Feature spec 06 project APIs:
+  - Added `GET /api/projects` for listing the authenticated user's owned projects.
+  - Added `POST /api/projects` for creating projects with Clerk `userId` as `ownerId` and `Untitled Project` fallback naming.
+  - Added `PATCH /api/projects/[projectId]` for owner-only project renames.
+  - Added `DELETE /api/projects/[projectId]` for owner-only project deletion.
+  - Added consistent JSON error responses for unauthenticated, forbidden, missing, and invalid requests.
+- Feature spec 07 wire editor home:
+  - Added server-side project list loading for owned and shared projects.
+  - Added API-backed `useProjectActions` hook for create, rename, and delete dialogs.
+  - Wired the editor home shell, sidebar, and project dialogs to real project data.
+  - Added room ID preview and create navigation to `/editor/{projectId}`.
+  - Added owner rename/delete refresh behavior and active workspace delete redirect behavior.
+  - Updated project creation to accept a validated slug-based project ID so project ID and room ID stay aligned.
 
 ## In Progress
 
@@ -53,7 +66,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Choose and implement the next feature unit from the project specs.
+- Feature spec 08 editor workspace shell.
 
 ## Open Questions
 
@@ -61,7 +74,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Architecture Decisions
 
-- Add decisions that affect the system design or data model.
+- Feature 07 keeps project IDs and Liveblocks room IDs aligned by creating projects with a validated slug-plus-suffix ID generated from the project name.
 
 ## Session Notes
 
@@ -81,3 +94,11 @@ Update this file whenever the current phase, active feature, or implementation s
 - Added `prisma/models/project.prisma` and `lib/prisma.ts` with Prisma Postgres/Accelerate and direct Postgres branching.
 - Ran `prisma format`, `prisma validate`, `prisma migrate dev --name init`, and `prisma generate`.
 - Verification for feature 05: `tsc --noEmit`, `npm.cmd run lint`, and `npm.cmd run build` passed. Build required elevated network access to fetch Next Google fonts.
+- Started and completed implementation of `context/feature-specs/06-project-apis.md`.
+- Added backend-only project REST route handlers and shared project API helpers.
+- Updated `proxy.ts` so `/api/projects` handlers return their own JSON `401` responses while still enforcing Clerk auth inside each handler.
+- Verification for feature 06: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and `npm.cmd run build` passed. Build required elevated network access to fetch Next Google fonts.
+- Started and completed implementation of `context/feature-specs/07-wire-editor-home.md`.
+- Replaced mock project dialog state with API-backed project actions and server-fetched editor project lists.
+- Updated create flow to generate a room ID, persist it as the project ID, and navigate to `/editor/{projectId}`.
+- Verification for feature 07: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and `npm.cmd run build` passed. Build required elevated network access to fetch Next Google fonts.

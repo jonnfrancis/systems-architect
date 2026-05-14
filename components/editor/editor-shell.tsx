@@ -6,13 +6,19 @@ import { Plus } from "lucide-react";
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
-import { useProjectDialogs } from "@/hooks/use-project-dialogs";
+import { useProjectActions } from "@/hooks/use-project-actions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import type { ProjectSummary } from "@/types/project";
 
-export function EditorShell() {
+interface EditorShellProps {
+  ownedProjects: ProjectSummary[];
+  sharedProjects: ProjectSummary[];
+}
+
+export function EditorShell({ ownedProjects, sharedProjects }: EditorShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const projectDialogs = useProjectDialogs();
+  const projectActions = useProjectActions();
 
   return (
     <main className="min-h-screen overflow-hidden bg-base text-copy-primary">
@@ -31,12 +37,12 @@ export function EditorShell() {
       />
       <ProjectSidebar
         isOpen={isSidebarOpen}
-        ownedProjects={projectDialogs.ownedProjects}
-        sharedProjects={projectDialogs.sharedProjects}
+        ownedProjects={ownedProjects}
+        sharedProjects={sharedProjects}
         onClose={() => setIsSidebarOpen(false)}
-        onCreateProject={projectDialogs.openCreateDialog}
-        onDeleteProject={projectDialogs.openDeleteDialog}
-        onRenameProject={projectDialogs.openRenameDialog}
+        onCreateProject={projectActions.openCreateDialog}
+        onDeleteProject={projectActions.openDeleteDialog}
+        onRenameProject={projectActions.openRenameDialog}
       />
 
       <section className="flex min-h-screen items-center justify-center pt-14">
@@ -51,7 +57,7 @@ export function EditorShell() {
           <Button
             type="button"
             className="mt-6"
-            onClick={projectDialogs.openCreateDialog}
+            onClick={projectActions.openCreateDialog}
           >
             <Plus className="h-4 w-4" />
             New Project
@@ -60,13 +66,13 @@ export function EditorShell() {
       </section>
 
       <ProjectDialogs
-        dialogState={projectDialogs.dialogState}
-        isLoading={projectDialogs.isLoading}
-        projectName={projectDialogs.projectName}
-        slugPreview={projectDialogs.slugPreview}
-        onClose={projectDialogs.closeDialog}
-        onProjectNameChange={projectDialogs.setProjectName}
-        onSubmit={projectDialogs.submitDialog}
+        dialogState={projectActions.dialogState}
+        isLoading={projectActions.isLoading}
+        projectName={projectActions.projectName}
+        roomIdPreview={projectActions.roomIdPreview}
+        onClose={projectActions.closeDialog}
+        onProjectNameChange={projectActions.setProjectName}
+        onSubmit={projectActions.submitDialog}
       />
     </main>
   );

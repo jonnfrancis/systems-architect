@@ -3,21 +3,21 @@
 import { FormEvent } from "react";
 
 import { EditorDialogContent } from "@/components/editor/editor-dialog";
-import type { MockProject } from "@/hooks/use-project-dialogs";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import type { ProjectSummary } from "@/types/project";
 
 interface ProjectDialogState {
   mode: "create" | "rename" | "delete";
-  project?: MockProject;
+  project?: ProjectSummary;
 }
 
 interface ProjectDialogsProps {
   dialogState: ProjectDialogState | null;
   isLoading: boolean;
   projectName: string;
-  slugPreview: string;
+  roomIdPreview: string;
   onClose: () => void;
   onProjectNameChange: (value: string) => void;
   onSubmit: () => void;
@@ -27,7 +27,7 @@ export function ProjectDialogs({
   dialogState,
   isLoading,
   projectName,
-  slugPreview,
+  roomIdPreview,
   onClose,
   onProjectNameChange,
   onSubmit,
@@ -77,8 +77,8 @@ export function ProjectDialogs({
               />
             </div>
             <p className="text-sm text-copy-muted">
-              Slug preview:{" "}
-              <span className="font-mono text-brand">{slugPreview}</span>
+              Room ID:{" "}
+              <span className="font-mono text-brand">{roomIdPreview}</span>
             </p>
           </form>
         </EditorDialogContent>
@@ -119,10 +119,6 @@ export function ProjectDialogs({
                 onChange={(event) => onProjectNameChange(event.target.value)}
               />
             </div>
-            <p className="text-sm text-copy-muted">
-              Slug preview:{" "}
-              <span className="font-mono text-brand">{slugPreview}</span>
-            </p>
           </form>
         </EditorDialogContent>
       ) : null}
