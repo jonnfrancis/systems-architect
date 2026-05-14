@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Auth implementation complete
+- Project dialogs complete
 
 ## Current Goal
 
@@ -32,6 +32,14 @@ Update this file whenever the current phase, active feature, or implementation s
   - Updated `/` to redirect authenticated users to `/editor` and unauthenticated users to `/sign-in`.
   - Added protected `/editor` route and Clerk `UserButton` in the editor navbar.
   - Added official Clerk sign-in/sign-up URL env vars.
+- Feature spec 04 project dialogs:
+  - Added minimal `/editor` home content with heading, description, and `New Project` button.
+  - Added create, rename, and delete project dialogs.
+  - Added live slug preview for project name forms.
+  - Added dedicated hook for dialog, form, mock project, and loading state.
+  - Wired sidebar create, rename, and delete actions using mock project data.
+  - Hid project actions for shared/collaborator projects.
+  - Added mobile sidebar backdrop scrim with outside-tap close behavior.
 
 ## In Progress
 
@@ -60,3 +68,6 @@ Update this file whenever the current phase, active feature, or implementation s
 - Started implementation of `context/feature-specs/03-auth.md`.
 - Added Clerk URL env vars, shared auth route constants, Clerk appearance config, auth page shell, sign-in/sign-up routes, protected editor route, root redirect, proxy route protection, and editor navbar `UserButton`.
 - Verification for feature 03: `npm.cmd run lint` passed and `tsc --noEmit` passed. `npm.cmd run build` reached Next's production build but failed while fetching Geist fonts from Google; the elevated network build request was declined.
+- Started implementation of `context/feature-specs/04-project-dialogs.md`.
+- Added editor home CTA, mock project state hook, project dialogs, owner-only sidebar actions, and mobile sidebar scrim.
+- Verification for feature 04: `tsc --noEmit` passed and `npm.cmd run lint` passed.

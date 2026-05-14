@@ -1,7 +1,8 @@
 "use client";
 
-import { PanelLeftClose, Plus } from "lucide-react";
+import { Pencil, PanelLeftClose, Plus, Trash2 } from "lucide-react";
 
+import type { MockProject } from "@/hooks/use-project-dialogs";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,13 +10,25 @@ import { cn } from "@/lib/utils";
 
 interface ProjectSidebarProps {
   isOpen: boolean;
+  ownedProjects: MockProject[];
+  sharedProjects: MockProject[];
   onClose: () => void;
+  onCreateProject: () => void;
+  onDeleteProject: (project: MockProject) => void;
+  onRenameProject: (project: MockProject) => void;
 }
 
-function EmptyProjectsState() {
+interface ProjectListProps {
+  projects: MockProject[];
+  showActions?: boolean;
+  onDeleteProject: (project: MockProject) => void;
+  onRenameProject: (project: MockProject) => void;
+}
+
+function EmptyProjectsState({ label }: { label: string }) {
   return (
     <div className="flex min-h-48 flex-col items-center justify-center rounded-2xl border border-dashed border-surface-border bg-subtle/45 px-5 text-center">
-      <p className="text-sm font-medium text-copy-primary">No projects yet</p>
+      <p className="text-sm font-medium text-copy-primary">{label}</p>
       <p className="mt-2 max-w-48 text-sm leading-6 text-copy-muted">
         Project lists will appear here once project storage is connected.
       </p>
@@ -23,7 +36,69 @@ function EmptyProjectsState() {
   );
 }
 
-export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
+function ProjectList({
+  projects,
+  showActions = false,
+  onDeleteProject,
+  onRenameProject,
+}: ProjectListProps) {
+  if (projects.length === 0) {
+    return <EmptyProjectsState label="No projects yet" />;
+  }
+
+  return (
+    <div className="space-y-2">
+      {projects.map((project) => (
+        <div
+          key={project.id}
+          className="group flex items-center justify-between gap-3 rounded-2xl border border-surface-border bg-subtle/45 px-3 py-3"
+        >
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-copy-primary">
+              {project.name}
+            </p>
+            <p className="mt-1 truncate font-mono text-xs text-copy-muted">
+              {project.slug}
+            </p>
+          </div>
+
+          {showActions ? (
+            <div className="flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Rename ${project.name}`}
+                onClick={() => onRenameProject(project)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete ${project.name}`}
+                onClick={() => onDeleteProject(project)}
+              >
+                <Trash2 className="h-4 w-4 text-state-error" />
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function ProjectSidebar({
+  isOpen,
+  ownedProjects,
+  sharedProjects,
+  onClose,
+  onCreateProject,
+  onDeleteProject,
+  onRenameProject,
+}: ProjectSidebarProps) {
   return (
     <aside
       className={cn(
@@ -54,16 +129,25 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
 
         <ScrollArea className="mt-4 h-[calc(100%-3.25rem)]">
           <TabsContent value="my-projects" className="mt-0">
-            <EmptyProjectsState />
+            <ProjectList
+              projects={ownedProjects}
+              showActions
+              onDeleteProject={onDeleteProject}
+              onRenameProject={onRenameProject}
+            />
           </TabsContent>
           <TabsContent value="shared" className="mt-0">
-            <EmptyProjectsState />
+            <ProjectList
+              projects={sharedProjects}
+              onDeleteProject={onDeleteProject}
+              onRenameProject={onRenameProject}
+            />
           </TabsContent>
         </ScrollArea>
       </Tabs>
 
       <div className="shrink-0 border-t border-surface-border p-4">
-        <Button type="button" className="w-full">
+        <Button type="button" className="w-full" onClick={onCreateProject}>
           <Plus className="h-4 w-4" />
           New Project
         </Button>

@@ -34,7 +34,7 @@ export function AuthPageShell({ children }: AuthPageShellProps) {
             <div className="h-7 w-7 rounded-lg bg-brand flex items-center justify-center shrink-0">
               <span
                 className="text-bg-base font-bold text-xs leading-none"
-                style={{ fontFamily: "var(--font-geist-sans)" }}
+                style={{ fontFamily: "var(--font-sans)" }}
               >
                 G
               </span>

@@ -9,7 +9,7 @@ import {
   signInPath,
   signUpPath,
 } from "@/lib/auth-routes";
-import { clerkAppearance } from "@/lib/clerk-appearance";
+import { dark } from "@clerk/ui/themes";
 
 import "./globals.css";
 
@@ -35,7 +35,23 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider
-      appearance={clerkAppearance}
+      appearance={{
+        theme: dark,
+        variables: {
+          colorBackground: "var(--color-base)",
+          colorNeutral: "var(--color-copy-primary)",
+          colorPrimary: "var(--color-brand)",
+          colorPrimaryForeground: "var(--color-base)",
+          colorForeground: "var(--color-foreground)",
+          colorInput: "var(--color-elevated)",
+          colorInputForeground: "var(--color-foreground)",
+          colorDanger: "var(--color-state-error)",
+          colorSuccess: "var(--color-state-success)",
+          colorWarning: "var(--color-state-warning)",
+          borderRadius: "var(--radius-lg)",
+          fontFamily: "var(--font-sans)",
+        }
+      }}
       signInUrl={signInPath}
       signUpUrl={signUpPath}
       signInFallbackRedirectUrl={afterSignInPath}
