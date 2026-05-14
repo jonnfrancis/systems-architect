@@ -40,7 +40,7 @@ export function ProjectDialogs({
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => (!open ? onClose() : null)}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       {dialogState?.mode === "create" ? (
         <EditorDialogContent
           title="Create Project"

@@ -101,6 +101,8 @@ export function useProjectDialogs() {
 
     if (dialogState.mode === "create") {
       const slug = createSlug(nextName);
+      if(!slug) return setIsLoading(false)
+      
 
       setProjects((currentProjects) => [
         {
