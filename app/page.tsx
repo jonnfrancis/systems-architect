@@ -1,5 +1,14 @@
-import { EditorShell } from "@/components/editor/editor-shell";
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return <EditorShell />;
+import { afterSignInPath, signInPath } from "@/lib/auth-routes";
+
+export default async function Home() {
+  const { userId } = await auth();
+
+  if (userId) {
+    redirect(afterSignInPath);
+  }
+
+  redirect(signInPath);
 }

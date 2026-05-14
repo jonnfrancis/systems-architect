@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Editor chrome complete
+- Auth implementation complete
 
 ## Current Goal
 
@@ -24,6 +24,14 @@ Update this file whenever the current phase, active feature, or implementation s
   - Added floating project sidebar shell with header, close action, tabs, empty states, and full-width `New Project` button.
   - Added reusable editor dialog content pattern with title, description, body, and footer support.
   - Mounted the editor chrome on the home page through a small client shell.
+- Feature spec 03 auth:
+  - Installed `@clerk/ui`.
+  - Wrapped the root layout with `ClerkProvider` using Clerk dark theme and app CSS variables.
+  - Added sign-in and sign-up routes with minimal two-panel desktop layout and form-only mobile layout.
+  - Added root `proxy.ts` with public auth routes and default protection for everything else.
+  - Updated `/` to redirect authenticated users to `/editor` and unauthenticated users to `/sign-in`.
+  - Added protected `/editor` route and Clerk `UserButton` in the editor navbar.
+  - Added official Clerk sign-in/sign-up URL env vars.
 
 ## In Progress
 
@@ -49,3 +57,6 @@ Update this file whenever the current phase, active feature, or implementation s
 - Started implementation of `context/feature-specs/02-editor-chrome.md`.
 - Added editor navbar, floating project sidebar shell, reusable editor dialog content pattern, and mounted the editor shell on `app/page.tsx`.
 - Verification note for feature 02: sandboxed lint/build commands are blocked by OneDrive path access. Elevated lint timed out once, and longer lint/build escalation was declined.
+- Started implementation of `context/feature-specs/03-auth.md`.
+- Added Clerk URL env vars, shared auth route constants, Clerk appearance config, auth page shell, sign-in/sign-up routes, protected editor route, root redirect, proxy route protection, and editor navbar `UserButton`.
+- Verification for feature 03: `npm.cmd run lint` passed and `tsc --noEmit` passed. `npm.cmd run build` reached Next's production build but failed while fetching Geist fonts from Google; the elevated network build request was declined.
