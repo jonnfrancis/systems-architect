@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type ChangeEvent,
   type KeyboardEvent,
   type ReactNode,
   type SyntheticEvent,
@@ -12,17 +13,19 @@ import {
 import {
   Handle,
   NodeResizer,
+  NodeToolbar,
   Position,
   useReactFlow,
   type NodeProps,
 } from "@xyflow/react";
 
-import type { CanvasEdge, CanvasNode } from "@/types/canvas";
-import { DEFAULT_NODE_SHAPE } from "@/types/canvas";
+import type { CanvasEdge, CanvasNode, CanvasNodeColor } from "@/types/canvas";
+import { DEFAULT_NODE_SHAPE, NODE_COLORS } from "@/types/canvas";
 
 const MIN_NODE_HEIGHT = 56;
 const MIN_NODE_WIDTH = 80;
 const EMPTY_LABEL_PLACEHOLDER = "Label";
+const LABEL_UPDATE_DELAY_MS = 200;
 
 interface NodeSurfaceProps {
   children?: ReactNode;
@@ -181,16 +184,141 @@ function SvgNodeSurface({
   );
 }
 
+function getSafeCssColor(value: string) {
+  if (typeof CSS !== "undefined" && CSS.supports("color", value)) {
+    return value;
+  }
+
+  return "var(--border-subtle)";
+}
+
 interface EditableNodeLabelProps {
   label: string;
   nodeId: string;
   text: string;
 }
 
+interface NodeColorToolbarProps {
+  activeColor: CanvasNodeColor;
+  nodeId: string;
+  selected: boolean;
+}
+
+function isSameNodeColor(color: CanvasNodeColor, candidate: CanvasNodeColor) {
+  return color.fill === candidate.fill && color.text === candidate.text;
+}
+
+function NodeColorToolbar({
+  activeColor,
+  nodeId,
+  selected,
+}: NodeColorToolbarProps) {
+  const { updateNodeData } = useReactFlow<CanvasNode, CanvasEdge>();
+
+  function stopToolbarInteraction(event: SyntheticEvent) {
+    event.stopPropagation();
+  }
+
+  function selectColor(color: CanvasNodeColor) {
+    updateNodeData(nodeId, { color });
+  }
+
+  return (
+    <NodeToolbar
+      nodeId={nodeId}
+      isVisible={selected}
+      position={Position.Top}
+      offset={14}
+      className="nodrag nopan nowheel"
+    >
+      <div
+        className="flex items-center gap-1 rounded-full border border-surface-border bg-surface/95 p-1.5 shadow-2xl shadow-background/40 backdrop-blur"
+        onClick={stopToolbarInteraction}
+        onDoubleClick={stopToolbarInteraction}
+        onMouseDown={stopToolbarInteraction}
+        onPointerDown={stopToolbarInteraction}
+        onTouchStart={stopToolbarInteraction}
+      >
+        {NODE_COLORS.map((color) => {
+          const isActive = isSameNodeColor(activeColor, color);
+
+          return (
+            <button
+              key={`${color.fill}-${color.text}`}
+              type="button"
+              aria-label="Change node color"
+              aria-pressed={isActive}
+              className="h-5 w-5 rounded-full border transition-[border-color,box-shadow,transform] hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              style={{
+                backgroundColor: color.fill,
+                borderColor: isActive ? color.text : "var(--border-subtle)",
+                boxShadow: isActive
+                  ? `0 0 0 2px ${color.text}`
+                  : `0 0 0 0 ${color.text}`,
+              }}
+              onClick={() => selectColor(color)}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.boxShadow = `0 0 0 2px ${color.text}`;
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.boxShadow = isActive
+                  ? `0 0 0 2px ${color.text}`
+                  : `0 0 0 0 ${color.text}`;
+              }}
+            >
+              <span
+                className="block h-full w-full rounded-full border"
+                style={{ borderColor: color.text }}
+              />
+            </button>
+          );
+        })}
+      </div>
+    </NodeToolbar>
+  );
+}
+
 function EditableNodeLabel({ label, nodeId, text }: EditableNodeLabelProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [draftLabel, setDraftLabel] = useState(label);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const labelUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const { updateNodeData } = useReactFlow<CanvasNode, CanvasEdge>();
+
+  const commitLabel = useCallback(
+    (nextLabel: string) => {
+      updateNodeData(nodeId, { label: nextLabel });
+    },
+    [nodeId, updateNodeData],
+  );
+
+  const clearPendingLabelUpdate = useCallback(() => {
+    if (labelUpdateTimeoutRef.current) {
+      clearTimeout(labelUpdateTimeoutRef.current);
+      labelUpdateTimeoutRef.current = null;
+    }
+  }, []);
+
+  const flushLabelUpdate = useCallback(
+    (nextLabel: string) => {
+      clearPendingLabelUpdate();
+      commitLabel(nextLabel);
+    },
+    [clearPendingLabelUpdate, commitLabel],
+  );
+
+  const scheduleLabelUpdate = useCallback(
+    (nextLabel: string) => {
+      clearPendingLabelUpdate();
+      labelUpdateTimeoutRef.current = setTimeout(() => {
+        labelUpdateTimeoutRef.current = null;
+        commitLabel(nextLabel);
+      }, LABEL_UPDATE_DELAY_MS);
+    },
+    [clearPendingLabelUpdate, commitLabel],
+  );
 
   useEffect(() => {
     if (!isEditing) {
@@ -203,15 +331,22 @@ function EditableNodeLabel({ label, nodeId, text }: EditableNodeLabelProps) {
     textarea?.select();
   }, [isEditing]);
 
-  const updateLabel = useCallback(
-    (nextLabel: string) => {
-      updateNodeData(nodeId, { label: nextLabel });
-    },
-    [nodeId, updateNodeData],
-  );
+  useEffect(() => clearPendingLabelUpdate, [clearPendingLabelUpdate]);
 
   function stopTextInteraction(event: SyntheticEvent) {
     event.stopPropagation();
+  }
+
+  function handleLabelChange(event: ChangeEvent<HTMLTextAreaElement>) {
+    const nextLabel = event.target.value;
+
+    setDraftLabel(nextLabel);
+    scheduleLabelUpdate(nextLabel);
+  }
+
+  function closeEditing() {
+    flushLabelUpdate(draftLabel);
+    setIsEditing(false);
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -219,7 +354,7 @@ function EditableNodeLabel({ label, nodeId, text }: EditableNodeLabelProps) {
 
     if (event.key === "Escape") {
       event.preventDefault();
-      setIsEditing(false);
+      closeEditing();
     }
   }
 
@@ -230,10 +365,10 @@ function EditableNodeLabel({ label, nodeId, text }: EditableNodeLabelProps) {
         aria-label="Node label"
         className="nodrag nopan nowheel absolute left-1/2 top-1/2 h-12 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 resize-none overflow-hidden border-0 bg-transparent px-3 py-3 text-center text-sm font-medium leading-5 outline-none placeholder:text-copy-muted"
         placeholder={EMPTY_LABEL_PLACEHOLDER}
-        value={label}
+        value={draftLabel}
         style={{ color: text }}
-        onBlur={() => setIsEditing(false)}
-        onChange={(event) => updateLabel(event.target.value)}
+        onBlur={closeEditing}
+        onChange={handleLabelChange}
         onClick={stopTextInteraction}
         onDoubleClick={stopTextInteraction}
         onKeyDown={handleKeyDown}
@@ -245,16 +380,16 @@ function EditableNodeLabel({ label, nodeId, text }: EditableNodeLabelProps) {
   }
 
   return (
-    <button
-      type="button"
-      className="nodrag nopan absolute inset-0 flex h-full w-full items-center justify-center border-0 bg-transparent p-0 text-sm font-medium"
+    <div
+      className="absolute inset-0 flex h-full w-full items-center justify-center text-sm font-medium"
       onDoubleClick={(event) => {
         event.stopPropagation();
+        setDraftLabel(label);
         setIsEditing(true);
       }}
     >
       <NodeLabel label={label} />
-    </button>
+    </div>
   );
 }
 
@@ -267,14 +402,20 @@ export function CanvasNodeRenderer({
   const label = data.label || "";
   const fill = data.color.fill;
   const text = data.color.text;
+  const resizerColor = getSafeCssColor(text);
 
   return (
     <div className="group relative h-full w-full">
+      <NodeColorToolbar
+        activeColor={data.color}
+        nodeId={id}
+        selected={selected}
+      />
       <NodeResizer
         isVisible={selected}
         minHeight={MIN_NODE_HEIGHT}
         minWidth={MIN_NODE_WIDTH}
-        color={text}
+        color={resizerColor}
         lineClassName="opacity-40"
         handleClassName="h-2.5 w-2.5 border border-background bg-copy-primary opacity-80"
       />

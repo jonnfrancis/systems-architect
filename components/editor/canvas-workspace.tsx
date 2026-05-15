@@ -14,22 +14,33 @@ import {
   RoomProvider,
   useErrorListener,
 } from "@liveblocks/react/suspense";
+import { useCanRedo, useCanUndo, useHistory } from "@liveblocks/react";
 import { Cursors, useLiveblocksFlow } from "@liveblocks/react-flow";
+import { Maximize2, Redo2, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import {
+  addEdge,
   Background,
   BackgroundVariant,
   ConnectionMode,
+  MarkerType,
   MiniMap,
   ReactFlow,
+  type EdgeTypes,
+  type Connection,
+  type DefaultEdgeOptions,
   type NodeTypes,
   type ReactFlowInstance,
 } from "@xyflow/react";
 
+import { CanvasEdgeRenderer } from "@/components/editor/canvas-edge";
 import {
   CanvasNodeRenderer,
   CanvasShapeSurface,
 } from "@/components/editor/canvas-node";
 import { ShapePanel } from "@/components/editor/shape-panel";
+import type { CanvasTemplate } from "@/components/editor/starter-templates";
+import { Button } from "@/components/ui/button";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import type { CanvasEdge, CanvasNode } from "@/types/canvas";
 import {
   CANVAS_EDGE_TYPE,
@@ -43,6 +54,12 @@ import {
 
 interface CanvasWorkspaceProps {
   roomId: string;
+  templateImportRequest?: TemplateImportRequest | null;
+}
+
+interface TemplateImportRequest {
+  id: number;
+  template: CanvasTemplate;
 }
 
 interface ShapeDragPreviewState {
@@ -51,6 +68,16 @@ interface ShapeDragPreviewState {
     x: number;
     y: number;
   };
+}
+
+interface CanvasControlBarProps {
+  canRedo: boolean;
+  canUndo: boolean;
+  onFitView: () => void;
+  onRedo: () => void;
+  onUndo: () => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
 }
 
 function CanvasLoadingState() {
@@ -131,22 +158,131 @@ function parseShapeDragPayload(dataTransfer: DataTransfer) {
   return null;
 }
 
-function SyncedReactFlowCanvas() {
+function CanvasControlBar({
+  canRedo,
+  canUndo,
+  onFitView,
+  onRedo,
+  onUndo,
+  onZoomIn,
+  onZoomOut,
+}: CanvasControlBarProps) {
+  return (
+    <div className="pointer-events-auto absolute bottom-20 left-5 z-10 flex items-center gap-1 rounded-full border border-surface-border bg-surface/95 p-1.5 shadow-2xl shadow-background/50 backdrop-blur">
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Zoom out"
+          title="Zoom out"
+          onClick={onZoomOut}
+        >
+          <ZoomOut className="h-5 w-5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Fit view"
+          title="Fit view"
+          onClick={onFitView}
+        >
+          <Maximize2 className="h-5 w-5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Zoom in"
+          title="Zoom in"
+          onClick={onZoomIn}
+        >
+          <ZoomIn className="h-5 w-5" />
+        </Button>
+      </div>
+      <div className="h-6 w-px bg-surface-border" />
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Undo"
+          title="Undo"
+          disabled={!canUndo}
+          onClick={onUndo}
+        >
+          <Undo2 className="h-5 w-5" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          aria-label="Redo"
+          title="Redo"
+          disabled={!canRedo}
+          onClick={onRedo}
+        >
+          <Redo2 className="h-5 w-5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function SyncedReactFlowCanvas({
+  templateImportRequest,
+}: {
+  templateImportRequest?: TemplateImportRequest | null;
+}) {
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance<CanvasNode, CanvasEdge> | null>(null);
+  const history = useHistory();
+  const canUndo = useCanUndo();
+  const canRedo = useCanRedo();
   const [shapeDragPreview, setShapeDragPreview] =
     useState<ShapeDragPreviewState | null>(null);
+  const previewFrameRef = useRef<number | null>(null);
+  const queuedPreviewPositionRef = useRef<ShapeDragPreviewState["position"] | null>(
+    null,
+  );
+  const importedTemplateRequestIdRef = useRef<number | null>(null);
   const nodeCounter = useRef(0);
+  const isShapeDragging = shapeDragPreview !== null;
   const nodeTypes = useMemo<NodeTypes>(
     () => ({
       [CANVAS_NODE_TYPE]: CanvasNodeRenderer,
     }),
     [],
   );
+  const edgeTypes = useMemo<EdgeTypes>(
+    () => ({
+      [CANVAS_EDGE_TYPE]: CanvasEdgeRenderer,
+    }),
+    [],
+  );
+  const defaultCanvasEdgeOptions = useMemo<DefaultEdgeOptions>(
+    () => ({
+      data: { label: "" },
+      markerEnd: {
+        color: "var(--text-primary)",
+        height: 16,
+        type: MarkerType.ArrowClosed,
+        width: 16,
+      },
+      style: {
+        stroke: "var(--text-primary)",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        strokeWidth: 1.5,
+      },
+      type: CANVAS_EDGE_TYPE,
+    }),
+    [],
+  );
   const {
     nodes,
     edges,
-    onConnect,
     onDelete,
     onEdgesChange,
     onNodesChange,
@@ -160,37 +296,121 @@ function SyncedReactFlowCanvas() {
     },
   });
 
+  const clearShapeDragPreview = useCallback(() => {
+    if (previewFrameRef.current !== null) {
+      window.cancelAnimationFrame(previewFrameRef.current);
+      previewFrameRef.current = null;
+    }
+
+    queuedPreviewPositionRef.current = null;
+    setShapeDragPreview(null);
+  }, []);
+
+  const scheduleShapePreviewPosition = useCallback(
+    (position: ShapeDragPreviewState["position"]) => {
+      queuedPreviewPositionRef.current = position;
+
+      if (previewFrameRef.current !== null) {
+        return;
+      }
+
+      previewFrameRef.current = window.requestAnimationFrame(() => {
+        const nextPosition = queuedPreviewPositionRef.current;
+
+        previewFrameRef.current = null;
+        queuedPreviewPositionRef.current = null;
+
+        if (!nextPosition) {
+          return;
+        }
+
+        setShapeDragPreview((current) =>
+          current
+            ? {
+                ...current,
+                position: nextPosition,
+              }
+            : null,
+        );
+      });
+    },
+    [],
+  );
+
   useEffect(() => {
-    if (!shapeDragPreview) {
+    if (!isShapeDragging) {
       return;
     }
 
     function handleWindowDragOver(event: globalThis.DragEvent) {
-      setShapeDragPreview((current) =>
-        current
-          ? {
-              ...current,
-              position: {
-                x: event.clientX,
-                y: event.clientY,
-              },
-            }
-          : null,
-      );
+      scheduleShapePreviewPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
     }
 
     function handleWindowDragEnd() {
-      setShapeDragPreview(null);
+      clearShapeDragPreview();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "hidden") {
+        clearShapeDragPreview();
+      }
     }
 
     window.addEventListener("dragover", handleWindowDragOver);
     window.addEventListener("dragend", handleWindowDragEnd);
+    window.addEventListener("drop", handleWindowDragEnd);
+    window.addEventListener("blur", handleWindowDragEnd);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.removeEventListener("dragover", handleWindowDragOver);
       window.removeEventListener("dragend", handleWindowDragEnd);
+      window.removeEventListener("drop", handleWindowDragEnd);
+      window.removeEventListener("blur", handleWindowDragEnd);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [shapeDragPreview]);
+  }, [clearShapeDragPreview, isShapeDragging, scheduleShapePreviewPosition]);
+
+  useEffect(() => clearShapeDragPreview, [clearShapeDragPreview]);
+
+  useEffect(() => {
+    if (
+      !templateImportRequest ||
+      importedTemplateRequestIdRef.current === templateImportRequest.id
+    ) {
+      return;
+    }
+
+    importedTemplateRequestIdRef.current = templateImportRequest.id;
+    onDelete({ nodes, edges });
+    onNodesChange(
+      templateImportRequest.template.nodes.map((node) => ({
+        type: "add",
+        item: node,
+      })),
+    );
+    onEdgesChange(
+      templateImportRequest.template.edges.map((edge) => ({
+        type: "add",
+        item: edge,
+      })),
+    );
+
+    window.requestAnimationFrame(() => {
+      void reactFlowInstance?.fitView({ duration: 180, padding: 0.25 });
+    });
+  }, [
+    edges,
+    nodes,
+    onDelete,
+    onEdgesChange,
+    onNodesChange,
+    reactFlowInstance,
+    templateImportRequest,
+  ]);
 
   const handleShapeDragStart = useCallback(
     (payload: ShapeDragPayload, position: { x: number; y: number }) => {
@@ -198,10 +418,6 @@ function SyncedReactFlowCanvas() {
     },
     [],
   );
-
-  const clearShapeDragPreview = useCallback(() => {
-    setShapeDragPreview(null);
-  }, []);
 
   const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     if (event.dataTransfer.types.includes(SHAPE_DRAG_MIME_TYPE)) {
@@ -248,6 +464,55 @@ function SyncedReactFlowCanvas() {
     [clearShapeDragPreview, onNodesChange, reactFlowInstance],
   );
 
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      const [edge] = addEdge<CanvasEdge>(
+        {
+          ...connection,
+          ...defaultCanvasEdgeOptions,
+        },
+        [],
+      );
+
+      if (!edge) {
+        return;
+      }
+
+      onEdgesChange([{ type: "add", item: edge }]);
+    },
+    [defaultCanvasEdgeOptions, onEdgesChange],
+  );
+
+  const handleZoomIn = useCallback(() => {
+    void reactFlowInstance?.zoomIn({ duration: 180 });
+  }, [reactFlowInstance]);
+
+  const handleZoomOut = useCallback(() => {
+    void reactFlowInstance?.zoomOut({ duration: 180 });
+  }, [reactFlowInstance]);
+
+  const handleFitView = useCallback(() => {
+    void reactFlowInstance?.fitView({ duration: 180, padding: 0.25 });
+  }, [reactFlowInstance]);
+
+  const handleUndo = useCallback(() => {
+    if (canUndo) {
+      history.undo();
+    }
+  }, [canUndo, history]);
+
+  const handleRedo = useCallback(() => {
+    if (canRedo) {
+      history.redo();
+    }
+  }, [canRedo, history]);
+
+  useKeyboardShortcuts({
+    reactFlowInstance,
+    onRedo: handleRedo,
+    onUndo: handleUndo,
+  });
+
   return (
     <div
       className="relative h-full w-full bg-base"
@@ -258,14 +523,15 @@ function SyncedReactFlowCanvas() {
         className="h-full w-full bg-base"
         nodes={nodes}
         edges={edges}
+        edgeTypes={edgeTypes}
         nodeTypes={nodeTypes}
-        onConnect={onConnect}
+        onConnect={handleConnect}
         onDelete={onDelete}
         onEdgesChange={onEdgesChange}
         onNodesChange={onNodesChange}
         onInit={setReactFlowInstance}
         connectionMode={ConnectionMode.Loose}
-        defaultEdgeOptions={{ type: CANVAS_EDGE_TYPE }}
+        defaultEdgeOptions={defaultCanvasEdgeOptions}
         fitView
         fitViewOptions={{ padding: 0.25 }}
         minZoom={0.2}
@@ -290,26 +556,39 @@ function SyncedReactFlowCanvas() {
         <Cursors />
       </ReactFlow>
       {shapeDragPreview ? (
-        <div
-          className="pointer-events-none fixed z-50 opacity-70"
-          style={{
-            height: shapeDragPreview.payload.height,
-            left:
-              shapeDragPreview.position.x - shapeDragPreview.payload.width / 2,
-            top:
-              shapeDragPreview.position.y - shapeDragPreview.payload.height / 2,
-            width: shapeDragPreview.payload.width,
-          }}
-        >
-          <CanvasShapeSurface
-            label=""
-            selected
-            fill={DEFAULT_NODE_COLOR.fill}
-            text={DEFAULT_NODE_COLOR.text}
-            shape={shapeDragPreview.payload.shape}
-          />
+        <div className="pointer-events-none fixed inset-0 z-50 opacity-70">
+          <div
+            style={{
+              height: shapeDragPreview.payload.height,
+              transform: `translate3d(${
+                shapeDragPreview.position.x -
+                shapeDragPreview.payload.width / 2
+              }px, ${
+                shapeDragPreview.position.y -
+                shapeDragPreview.payload.height / 2
+              }px, 0)`,
+              width: shapeDragPreview.payload.width,
+            }}
+          >
+            <CanvasShapeSurface
+              label=""
+              selected
+              fill={DEFAULT_NODE_COLOR.fill}
+              text={DEFAULT_NODE_COLOR.text}
+              shape={shapeDragPreview.payload.shape}
+            />
+          </div>
         </div>
       ) : null}
+      <CanvasControlBar
+        canRedo={canRedo}
+        canUndo={canUndo}
+        onFitView={handleFitView}
+        onRedo={handleRedo}
+        onUndo={handleUndo}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+      />
       <ShapePanel
         onShapeDragStart={handleShapeDragStart}
         onShapeDragEnd={clearShapeDragPreview}
@@ -318,7 +597,10 @@ function SyncedReactFlowCanvas() {
   );
 }
 
-export function CanvasWorkspace({ roomId }: CanvasWorkspaceProps) {
+export function CanvasWorkspace({
+  roomId,
+  templateImportRequest,
+}: CanvasWorkspaceProps) {
   return (
     <LiveblocksProvider authEndpoint="/api/liveblocks-auth">
       <RoomProvider
@@ -327,7 +609,11 @@ export function CanvasWorkspace({ roomId }: CanvasWorkspaceProps) {
       >
         <LiveblocksRoomErrorBoundary>
           <ClientSideSuspense fallback={<CanvasLoadingState />}>
-            {() => <SyncedReactFlowCanvas />}
+            {() => (
+              <SyncedReactFlowCanvas
+                templateImportRequest={templateImportRequest}
+              />
+            )}
           </ClientSideSuspense>
         </LiveblocksRoomErrorBoundary>
       </RoomProvider>

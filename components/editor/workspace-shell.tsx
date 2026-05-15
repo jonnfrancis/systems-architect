@@ -1,12 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Bot, PanelLeftClose, PanelLeftOpen, Share2 } from "lucide-react";
+import {
+  Bot,
+  LayoutTemplate,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Share2,
+} from "lucide-react";
 
 import { CanvasWorkspace } from "@/components/editor/canvas-workspace";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ShareDialog } from "@/components/editor/share-dialog";
+import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
+import type { CanvasTemplate } from "@/components/editor/starter-templates";
 import { Button } from "@/components/ui/button";
 import { useProjectActions } from "@/hooks/use-project-actions";
 import { cn } from "@/lib/utils";
@@ -18,6 +26,11 @@ interface WorkspaceShellProps {
   sharedProjects: ProjectSummary[];
 }
 
+interface TemplateImportRequest {
+  id: number;
+  template: CanvasTemplate;
+}
+
 export function WorkspaceShell({
   project,
   ownedProjects,
@@ -26,8 +39,18 @@ export function WorkspaceShell({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(true);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [isStarterTemplatesOpen, setIsStarterTemplatesOpen] = useState(false);
+  const [templateImportRequest, setTemplateImportRequest] =
+    useState<TemplateImportRequest | null>(null);
   const projectActions = useProjectActions();
   const SidebarIcon = isSidebarOpen ? PanelLeftClose : PanelLeftOpen;
+
+  function importTemplate(template: CanvasTemplate) {
+    setTemplateImportRequest((current) => ({
+      id: (current?.id ?? 0) + 1,
+      template,
+    }));
+  }
 
   return (
     <main className="min-h-screen overflow-hidden bg-base text-copy-primary">
@@ -53,6 +76,15 @@ export function WorkspaceShell({
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsStarterTemplatesOpen(true)}
+          >
+            <LayoutTemplate className="h-4 w-4" />
+            Templates
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -96,7 +128,10 @@ export function WorkspaceShell({
       />
 
       <section className="h-screen pt-14">
-        <CanvasWorkspace roomId={project.id} />
+        <CanvasWorkspace
+          roomId={project.id}
+          templateImportRequest={templateImportRequest}
+        />
 
         <aside
           className={cn(
@@ -137,6 +172,12 @@ export function WorkspaceShell({
         projectId={project.id}
         projectName={project.name}
         onClose={() => setIsShareDialogOpen(false)}
+      />
+
+      <StarterTemplatesModal
+        isOpen={isStarterTemplatesOpen}
+        onClose={() => setIsStarterTemplatesOpen(false)}
+        onImport={importTemplate}
       />
     </main>
   );

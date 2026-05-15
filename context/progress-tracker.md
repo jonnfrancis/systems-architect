@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 14 node editing complete
+- Feature 18 starter templates complete
 
 ## Current Goal
 
@@ -119,6 +119,43 @@ Update this file whenever the current phase, active feature, or implementation s
   - Updated labels through React Flow node data updates so changes continue through the existing collaborative node state flow.
   - Closed label editing on blur or `Escape`.
   - Prevented textarea interactions from dragging or panning the canvas.
+- Editor canvas node interaction bug fix:
+  - Restored node dragging by removing drag-blocking behavior from the read-mode label overlay.
+  - Kept canvas drag/pan prevention scoped to the active textarea while editing.
+  - Debounced collaborative label updates and flushed the latest value when editing closes.
+  - Validated node text color before passing it to `NodeResizer`.
+  - Hardened ghost preview cleanup for drag end, drop, blur, visibility changes, and unmount.
+  - Throttled ghost preview movement with `requestAnimationFrame`.
+  - Moved ghost preview positioning into a fixed overlay with transform-based viewport coordinates.
+- Feature spec 15 node color toolbar:
+  - Registered the custom `canvasEdge` type so React Flow no longer falls back from the configured edge type.
+  - Added a floating selected-node color toolbar with one swatch per `NODE_COLORS` pair.
+  - Styled active swatches with a clear selected ring and hover glow based on the paired text color.
+  - Prevented toolbar interactions from dragging nodes or panning the canvas.
+  - Updated node background and text color together through React Flow node data updates.
+  - Kept color changes client-side and inside the existing collaborative canvas state.
+- Feature spec 16 edge behavior:
+  - Added typed edge label data to the shared canvas edge schema.
+  - Replaced the registered `canvasEdge` renderer with a custom right-angle edge renderer.
+  - Added dim rest styling, bright hover/selected styling, rounded stroke ends, and a wide transparent interaction path.
+  - Kept new connections on the custom edge type with arrow markers and default label data.
+  - Added inline edge label editing on double-click with `EdgeLabelRenderer` and `getSmoothStepPath` label coordinates.
+  - Saved edge labels through React Flow edge data updates so changes continue through the collaborative canvas state.
+- Feature spec 17 canvas ergonomics:
+  - Added a bottom-left pill-shaped control bar with zoom out, fit view, zoom in, undo, and redo controls.
+  - Wired zoom controls to the active React Flow instance with short animated movement.
+  - Wired undo and redo to Liveblocks history using `useHistory`, `useCanUndo`, and `useCanRedo`.
+  - Kept undo and redo buttons disabled and visually dimmed when no matching history action is available.
+  - Added `hooks/use-keyboard-shortcuts.ts` for zoom and history shortcuts.
+  - Ignored keyboard shortcuts while focus is inside inputs, textareas, selects, or content-editable fields.
+- Feature spec 18 starter templates:
+  - Added typed starter template data for microservices, CI/CD pipeline, and event-driven system diagrams.
+  - Defined starter templates with shared canvas node and edge types plus the existing node color palette.
+  - Added a starter templates dialog with scrollable template cards and per-template import actions.
+  - Added lightweight SVG diagram previews that fit template nodes and edges into fixed preview viewports.
+  - Added a navbar Templates button as the starter template entry point.
+  - Wired template import to replace the current Liveblocks canvas by clearing existing nodes and edges before adding template nodes and edges.
+  - Fit the React Flow viewport after a starter template is imported.
 
 ## In Progress
 
@@ -126,7 +163,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Feature spec 15.
+- Feature spec 19.
 
 ## Open Questions
 
@@ -190,3 +227,18 @@ Update this file whenever the current phase, active feature, or implementation s
 - Started and completed implementation of `context/feature-specs/14-node-editing.md`.
 - Added selected-node resizing and double-click inline label editing without changing shape rendering, shape panel behavior, or drop creation.
 - Verification for feature 14: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Completed editor canvas node interaction bug fix pass.
+- Restored node dragging after inline editing, made ghost preview cleanup more reliable, throttled drag preview updates, validated resize color input, and reduced collaborative label update churn.
+- Verification for the bug fix pass: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Started and completed implementation of `context/feature-specs/15-node-color-toolbar.md`.
+- Fixed the React Flow `canvasEdge` warning by registering the custom edge type, then added selected-node color swatches backed by `NODE_COLORS`.
+- Verification for feature 15: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Started and completed implementation of `context/feature-specs/16-edge-behavior.md`.
+- Added the custom canvas edge renderer, default edge arrow styling, typed label data, and inline label editing through collaborative edge data updates.
+- Verification for feature 16: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Started and completed implementation of `context/feature-specs/17-canvas-ergonomics.md.md`.
+- Added bottom-left canvas controls for zoom, fit view, undo, and redo, plus keyboard shortcuts in `hooks/use-keyboard-shortcuts.ts`.
+- Verification for feature 17: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed.
+- Started and completed implementation of `context/feature-specs/18-starter-templates.md`.
+- Added starter template data, the template import modal with lightweight previews, a navbar entry point, and Liveblocks-backed canvas replacement on import.
+- Verification for feature 18: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed.
