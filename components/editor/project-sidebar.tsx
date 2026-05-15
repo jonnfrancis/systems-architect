@@ -11,6 +11,7 @@ import type { ProjectSummary } from "@/types/project";
 
 interface ProjectSidebarProps {
   isOpen: boolean;
+  activeProjectId?: string;
   ownedProjects: ProjectSummary[];
   sharedProjects: ProjectSummary[];
   onClose: () => void;
@@ -21,6 +22,7 @@ interface ProjectSidebarProps {
 
 interface ProjectListProps {
   projects: ProjectSummary[];
+  activeProjectId?: string;
   showActions?: boolean;
   onDeleteProject: (project: ProjectSummary) => void;
   onRenameProject: (project: ProjectSummary) => void;
@@ -39,6 +41,7 @@ function EmptyProjectsState({ label }: { label: string }) {
 
 function ProjectList({
   projects,
+  activeProjectId,
   showActions = false,
   onDeleteProject,
   onRenameProject,
@@ -49,50 +52,64 @@ function ProjectList({
 
   return (
     <div className="space-y-2">
-      {projects.map((project) => (
-        <div
-          key={project.id}
-          className="group flex items-center justify-between gap-3 rounded-2xl border border-surface-border bg-subtle/45 px-3 py-3"
-        >
-          <Link href={`/editor/${project.id}`} className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-copy-primary">
-              {project.name}
-            </p>
-            <p className="mt-1 truncate font-mono text-xs text-copy-muted">
-              {project.id}
-            </p>
-          </Link>
+      {projects.map((project) => {
+        const isActive = project.id === activeProjectId;
 
-          {showActions ? (
-            <div className="flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={`Rename ${project.name}`}
-                onClick={() => onRenameProject(project)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label={`Delete ${project.name}`}
-                onClick={() => onDeleteProject(project)}
-              >
-                <Trash2 className="h-4 w-4 text-state-error" />
-              </Button>
-            </div>
-          ) : null}
-        </div>
-      ))}
+        return (
+          <div
+            key={project.id}
+            className={cn(
+              "group flex items-center justify-between gap-3 rounded-2xl border px-3 py-3",
+              isActive
+                ? "border-brand bg-accent-dim"
+                : "border-surface-border bg-subtle/45",
+            )}
+          >
+            <Link
+              href={`/editor/${project.id}`}
+              aria-current={isActive ? "page" : undefined}
+              className="min-w-0 flex-1"
+            >
+              <p className="truncate text-sm font-medium text-copy-primary">
+                {project.name}
+              </p>
+              <p className="mt-1 truncate font-mono text-xs text-copy-muted">
+                {project.id}
+              </p>
+            </Link>
+
+            {showActions ? (
+              <div className="flex shrink-0 items-center gap-1 opacity-100 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Rename ${project.name}`}
+                  onClick={() => onRenameProject(project)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Delete ${project.name}`}
+                  onClick={() => onDeleteProject(project)}
+                >
+                  <Trash2 className="h-4 w-4 text-state-error" />
+                </Button>
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 export function ProjectSidebar({
   isOpen,
+  activeProjectId,
   ownedProjects,
   sharedProjects,
   onClose,
@@ -100,6 +117,12 @@ export function ProjectSidebar({
   onDeleteProject,
   onRenameProject,
 }: ProjectSidebarProps) {
+  const defaultTab = sharedProjects.some(
+    (project) => project.id === activeProjectId,
+  )
+    ? "shared"
+    : "my-projects";
+
   return (
     <aside
       className={cn(
@@ -122,7 +145,7 @@ export function ProjectSidebar({
         </Button>
       </div>
 
-      <Tabs defaultValue="my-projects" className="min-h-0 flex-1 px-4 py-4">
+      <Tabs defaultValue={defaultTab} className="min-h-0 flex-1 px-4 py-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="my-projects">My Projects</TabsTrigger>
           <TabsTrigger value="shared">Shared</TabsTrigger>
@@ -132,6 +155,7 @@ export function ProjectSidebar({
           <TabsContent value="my-projects" className="mt-0">
             <ProjectList
               projects={ownedProjects}
+              activeProjectId={activeProjectId}
               showActions
               onDeleteProject={onDeleteProject}
               onRenameProject={onRenameProject}
@@ -140,6 +164,7 @@ export function ProjectSidebar({
           <TabsContent value="shared" className="mt-0">
             <ProjectList
               projects={sharedProjects}
+              activeProjectId={activeProjectId}
               onDeleteProject={onDeleteProject}
               onRenameProject={onRenameProject}
             />

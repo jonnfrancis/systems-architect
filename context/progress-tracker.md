@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Editor home project API wiring complete
+- Share dialog complete
 
 ## Current Goal
 
-- Ready to build the `/editor/[roomId]` workspace shell in the next feature unit.
+- Ready to build the next feature unit.
 
 ## Completed
 
@@ -59,6 +59,20 @@ Update this file whenever the current phase, active feature, or implementation s
   - Added room ID preview and create navigation to `/editor/{projectId}`.
   - Added owner rename/delete refresh behavior and active workspace delete redirect behavior.
   - Updated project creation to accept a validated slug-based project ID so project ID and room ID stay aligned.
+- Feature spec 08 editor workspace shell:
+  - Added `/editor/[roomId]` as a server component with project access checks.
+  - Added `lib/project-access.ts` for current Clerk identity and owner/collaborator project access resolution.
+  - Added `AccessDenied` for missing or unauthorized projects.
+  - Added workspace chrome with project-name navbar, share button, AI sidebar toggle, existing project sidebar, canvas placeholder, and AI chat placeholder.
+  - Highlighted the active room in the project sidebar, including shared-project tab selection.
+- Feature spec 09 share dialog:
+  - Added collaborator list, invite, and remove API routes.
+  - Enforced owner-only invite and remove behavior server-side.
+  - Enriched collaborator emails with Clerk display names and avatar images when available.
+  - Added enriched project owner data to the share API response.
+  - Wired the workspace Share button to a dialog with owner-managed and collaborator read-only states.
+  - Added a People with access section that shows the owner and collaborators.
+  - Added project link copy behavior with temporary `Copied!` feedback.
 
 ## In Progress
 
@@ -66,7 +80,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Feature spec 08 editor workspace shell.
+- Feature spec 10 Liveblocks setup.
 
 ## Open Questions
 
@@ -102,3 +116,12 @@ Update this file whenever the current phase, active feature, or implementation s
 - Replaced mock project dialog state with API-backed project actions and server-fetched editor project lists.
 - Updated create flow to generate a room ID, persist it as the project ID, and navigate to `/editor/{projectId}`.
 - Verification for feature 07: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and `npm.cmd run build` passed. Build required elevated network access to fetch Next Google fonts.
+- Started and completed implementation of `context/feature-specs/08-editor-workspace-shell.md`.
+- Added `/editor/[roomId]`, project access helpers, `AccessDenied`, active sidebar highlighting, and placeholder workspace chrome.
+- Verification for feature 08: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and `npm.cmd run build` passed. Build required elevated network access to fetch Next Google fonts.
+- Re-verified feature 08 after interrupted work: `/editor/[roomId]` server access checks, workspace shell wiring, active project sidebar state, and `AccessDenied` remain implemented. `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed.
+- Started and completed implementation of `context/feature-specs/09-share-dialog.md`.
+- Added share dialog APIs for listing, inviting, and removing project collaborators, with owner-only mutations enforced server-side.
+- Added Clerk enrichment for collaborator names and avatars, plus owner enrichment for the People with access section.
+- Wired the workspace Share button to the owner-managed/read-only dialog, collaborator removal, and project link copy feedback.
+- Verification for feature 09: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.

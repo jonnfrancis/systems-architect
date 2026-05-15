@@ -1,3 +1,5 @@
+Read `AGENTS.md` and `context/ui-context.md` before starting.
+
 Build the `/editor/[roomId]` workspace shell with server-side access checks. No canvas logic yet.
 
 ## Access
