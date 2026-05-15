@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Shape panel complete
+- Editor canvas visual fixes complete
 
 ## Current Goal
 
@@ -95,6 +95,14 @@ Update this file whenever the current phase, active feature, or implementation s
   - Added canvas dragover/drop handling that converts screen coordinates through React Flow.
   - Added collaborative node creation using the existing Liveblocks-synced node change handler.
   - Added a basic custom `canvasNode` renderer so dropped nodes are visible.
+- Editor canvas visual review:
+  - Documented the current canvas visual issues in `context/current-issues.md`.
+  - Updated `CanvasNodeRenderer` to render rectangle, circle, pill, diamond, cylinder, and hexagon nodes based on `data.shape`.
+  - Added hover-revealed connection handles to custom canvas nodes.
+  - Updated the workspace layout so the AI sidebar floats above the full-width canvas instead of shrinking it.
+  - Kept the dotted React Flow canvas visible edge-to-edge behind both floating sidebars.
+  - Normalized the Liveblocks auth room ID and used the same value for access checks, room creation, and session permissions.
+  - Scoped React Flow and Liveblocks Flow CSS imports to the editor route segment.
 
 ## In Progress
 
@@ -157,3 +165,6 @@ Update this file whenever the current phase, active feature, or implementation s
 - Started and completed implementation of `context/feature-specs/12-shape-panel.md`.
 - Added draggable shape payloads, bottom shape panel, drop-to-create behavior, and a simple custom canvas node renderer.
 - Verification for feature 12: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Completed editor canvas visual review and fixes from `context/current-issues.md`.
+- Added per-shape canvas node rendering, floating AI sidebar behavior, full-width canvas treatment, normalized Liveblocks auth room IDs, and editor-scoped React Flow CSS imports.
+- Verification for canvas visual fixes: `npx.cmd next typegen`, `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.

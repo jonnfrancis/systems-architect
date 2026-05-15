@@ -11,8 +11,6 @@ import {
 } from "@/lib/auth-routes";
 import { clerkAppearance } from "@/lib/clerk-appearance";
 
-import "@xyflow/react/dist/style.css";
-import "@liveblocks/react-flow/styles.css";
 import "./globals.css";
 
 const geistSans = Geist({

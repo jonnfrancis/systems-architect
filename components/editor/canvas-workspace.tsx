@@ -6,8 +6,8 @@ import {
   LiveblocksProvider,
   RoomProvider,
   useErrorListener,
-} from "@liveblocks/react";
-import { useLiveblocksFlow } from "@liveblocks/react-flow";
+} from "@liveblocks/react/suspense";
+import { Cursors, useLiveblocksFlow } from "@liveblocks/react-flow";
 import {
   Background,
   BackgroundVariant,
@@ -77,7 +77,9 @@ function LiveblocksRoomErrorBoundary({
 }
 
 function isCanvasNodeShape(value: unknown): value is CanvasNodeShape {
-  return typeof value === "string" && NODE_SHAPES.includes(value as CanvasNodeShape);
+  return (
+    typeof value === "string" && NODE_SHAPES.includes(value as CanvasNodeShape)
+  );
 }
 
 function parseShapeDragPayload(dataTransfer: DataTransfer) {
@@ -158,8 +160,8 @@ function SyncedReactFlowCanvas() {
       nodeCounter.current += 1;
 
       const position = reactFlowInstance.screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
+        x: event.clientX - payload.width / 2,
+        y: event.clientY - payload.height / 2,
       });
       const nodeId = `${payload.shape}-${Date.now()}-${nodeCounter.current}`;
       const node: CanvasNode = {
@@ -183,9 +185,13 @@ function SyncedReactFlowCanvas() {
   );
 
   return (
-    <div className="relative h-full w-full" onDragOver={handleDragOver} onDrop={handleDrop}>
+    <div
+      className="relative h-full w-full bg-base"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <ReactFlow<CanvasNode, CanvasEdge>
-        className="bg-base"
+        className="h-full w-full bg-base"
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
@@ -197,6 +203,12 @@ function SyncedReactFlowCanvas() {
         connectionMode={ConnectionMode.Loose}
         defaultEdgeOptions={{ type: CANVAS_EDGE_TYPE }}
         fitView
+        fitViewOptions={{ padding: 0.25 }}
+        minZoom={0.2}
+        maxZoom={2}
+        panOnScroll
+        selectionOnDrag
+        proOptions={{ hideAttribution: true }}
         colorMode="dark"
       >
         <Background
@@ -211,6 +223,7 @@ function SyncedReactFlowCanvas() {
           nodeColor="var(--bg-subtle)"
           maskColor="color-mix(in srgb, var(--bg-base) 72%, transparent)"
         />
+        <Cursors />
       </ReactFlow>
       <ShapePanel />
     </div>

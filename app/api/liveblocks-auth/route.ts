@@ -27,6 +27,19 @@ function getDisplayName(user: Awaited<ReturnType<typeof currentUser>>) {
   );
 }
 
+function getRequestedRoomId(body: Record<string, unknown> | null) {
+  const requestedRoomId =
+    typeof body?.room === "string"
+      ? body.room
+      : typeof body?.roomId === "string"
+        ? body.roomId
+        : null;
+
+  const roomId = requestedRoomId?.trim();
+
+  return roomId || null;
+}
+
 export async function POST(request: Request) {
   const identity = await getCurrentProjectIdentity();
 
@@ -35,12 +48,7 @@ export async function POST(request: Request) {
   }
 
   const body = await parseJsonObject(request);
-  const roomId =
-    typeof body?.room === "string"
-      ? body.room
-      : typeof body?.roomId === "string"
-        ? body.roomId
-        : null;
+  const roomId = getRequestedRoomId(body);
 
   if (!roomId) {
     return jsonError("Liveblocks room is required.", 400);
@@ -56,7 +64,7 @@ export async function POST(request: Request) {
   const liveblocks = getLiveblocksClient();
   const cursorColor = getCursorColorForUser(identity.userId);
 
-  await ensureLiveblocksRoom(project.id);
+  await ensureLiveblocksRoom(roomId);
 
   const session = liveblocks.prepareSession(identity.userId, {
     userInfo: {
@@ -66,7 +74,7 @@ export async function POST(request: Request) {
     },
   });
 
-  session.allow(project.id, session.FULL_ACCESS);
+  session.allow(roomId, session.FULL_ACCESS);
 
   const { body: responseBody, status } = await session.authorize();
 

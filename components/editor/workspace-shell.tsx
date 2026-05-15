@@ -95,16 +95,18 @@ export function WorkspaceShell({
         onRenameProject={projectActions.openRenameDialog}
       />
 
-      <section className="flex h-screen pt-14">
-        <div className="min-w-0 flex-1 bg-base">
-          <CanvasWorkspace roomId={project.id} />
-        </div>
+      <section className="h-screen pt-14">
+        <CanvasWorkspace roomId={project.id} />
 
         <aside
           className={cn(
-            "hidden w-80 shrink-0 border-l border-surface-border bg-surface/95 transition-[width] duration-200 ease-out lg:block",
-            !isAiSidebarOpen && "w-0 overflow-hidden border-l-0",
+            "fixed right-4 top-18 z-30 hidden h-[calc(100vh-5rem)] w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl shadow-background/40 backdrop-blur transition-transform duration-200 ease-out lg:flex",
+            isAiSidebarOpen
+              ? "translate-x-0"
+              : "pointer-events-none translate-x-[calc(100%+2rem)]",
           )}
+          aria-hidden={!isAiSidebarOpen}
+          inert={!isAiSidebarOpen}
         >
           <div className="flex h-full flex-col">
             <div className="flex h-14 shrink-0 items-center border-b border-surface-border px-4">
