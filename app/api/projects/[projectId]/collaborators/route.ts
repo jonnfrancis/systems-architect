@@ -7,9 +7,11 @@ import {
   isValidCollaboratorEmail,
   normalizeCollaboratorEmail,
 } from "@/lib/collaborators";
-import { getAccessibleProject, getCurrentProjectIdentity } from "@/lib/project-access";
-import { jsonError, parseJsonObject, validateSameOrigin } from "@/lib/project-api";
-import { Prisma } from "@prisma/client";
+import {
+  getAccessibleProject,
+  getCurrentProjectIdentity,
+} from "@/lib/project-access";
+import { jsonError, parseJsonObject } from "@/lib/project-api";
 import { prisma } from "@/lib/prisma";
 
 interface ProjectCollaboratorsRouteContext {
@@ -18,7 +20,19 @@ interface ProjectCollaboratorsRouteContext {
   }>;
 }
 
-export async function GET(_request: Request, context: ProjectCollaboratorsRouteContext) {
+function isUniqueConstraintError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "P2002"
+  );
+}
+
+export async function GET(
+  _request: Request,
+  context: ProjectCollaboratorsRouteContext,
+) {
   const identity = await getCurrentProjectIdentity();
 
   if (!identity) {
@@ -49,11 +63,10 @@ export async function GET(_request: Request, context: ProjectCollaboratorsRouteC
   });
 }
 
-export async function POST(request: Request, context: ProjectCollaboratorsRouteContext) {
-  if (!validateSameOrigin(request)) {
-    return jsonError("Invalid origin", 403);
-  }
-
+export async function POST(
+  request: Request,
+  context: ProjectCollaboratorsRouteContext,
+) {
   const { isAuthenticated, userId } = await auth();
 
   if (!isAuthenticated || !userId) {
@@ -88,7 +101,10 @@ export async function POST(request: Request, context: ProjectCollaboratorsRouteC
 
   const identity = await getCurrentProjectIdentity();
 
-  if (identity?.primaryEmail && email === normalizeCollaboratorEmail(identity.primaryEmail)) {
+  if (
+    identity?.primaryEmail &&
+    email === normalizeCollaboratorEmail(identity.primaryEmail)
+  ) {
     return jsonError("Project owner cannot be added as a collaborator.", 400);
   }
 
@@ -110,15 +126,14 @@ export async function POST(request: Request, context: ProjectCollaboratorsRouteC
 
     const [enrichedCollaborator] = await enrichCollaborators([collaborator]);
 
-    return Response.json({ collaborator: enrichedCollaborator }, { status: 201 });
+    return Response.json(
+      { collaborator: enrichedCollaborator },
+      { status: 201 },
+    );
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
+    if (isUniqueConstraintError(error)) {
       return jsonError("Collaborator already has access.", 409);
     }
-
     console.error("Error inviting collaborator:", error);
     return jsonError("Unable to invite collaborator.", 500);
   }

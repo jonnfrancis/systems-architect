@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import { Copy, Trash2, UserRoundPlus } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 import { EditorDialogContent } from "@/components/editor/editor-dialog";
 import { Button } from "@/components/ui/button";
@@ -198,7 +199,7 @@ export function ShareDialog({
     } catch (error) {
       console.error("Failed to copy link:", error);
     }
-    toast.success("Copied!")
+    toast.success("Copied!");
     setCopied(true);
   }
 

@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Share dialog complete
+- Shape panel complete
 
 ## Current Goal
 
@@ -73,6 +73,28 @@ Update this file whenever the current phase, active feature, or implementation s
   - Wired the workspace Share button to a dialog with owner-managed and collaborator read-only states.
   - Added a People with access section that shows the owner and collaborators.
   - Added project link copy behavior with temporary `Copied!` feedback.
+- Feature spec 10 Liveblocks setup:
+  - Added `@liveblocks/node` for server-side Liveblocks auth.
+  - Configured `liveblocks.config.ts` with shared presence and user metadata types.
+  - Added a cached Liveblocks node client in `lib/liveblocks.ts`.
+  - Added deterministic cursor color assignment from a fixed palette.
+  - Added `POST /api/liveblocks-auth` with Clerk authentication and project access checks.
+  - Ensured Liveblocks rooms are created only when missing, using project IDs as room IDs.
+  - Attached Clerk user name, avatar URL, and generated cursor color to session metadata.
+- Feature spec 11 base canvas:
+  - Added shared canvas node, edge, color, and shape types in `types/canvas.ts`.
+  - Typed Liveblocks storage with the React Flow-backed `flow` state.
+  - Added a client canvas wrapper with `LiveblocksProvider`, `RoomProvider`, initial presence, `ClientSideSuspense`, and Liveblocks error fallback.
+  - Replaced the workspace canvas placeholder with a Liveblocks-synced React Flow canvas.
+  - Wired `useLiveblocksFlow` with empty initial nodes and edges.
+  - Added loose connections, `fitView`, `MiniMap`, and dot-pattern canvas background.
+- Feature spec 12 shape panel:
+  - Added a floating bottom-center draggable shape toolbar.
+  - Added draggable buttons for rectangle, diamond, circle, pill, cylinder, and hexagon shapes.
+  - Added typed drag payloads with shape and default size data.
+  - Added canvas dragover/drop handling that converts screen coordinates through React Flow.
+  - Added collaborative node creation using the existing Liveblocks-synced node change handler.
+  - Added a basic custom `canvasNode` renderer so dropped nodes are visible.
 
 ## In Progress
 
@@ -80,7 +102,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Feature spec 10 Liveblocks setup.
+- Feature spec 13 node shape rendering.
 
 ## Open Questions
 
@@ -125,3 +147,13 @@ Update this file whenever the current phase, active feature, or implementation s
 - Added Clerk enrichment for collaborator names and avatars, plus owner enrichment for the People with access section.
 - Wired the workspace Share button to the owner-managed/read-only dialog, collaborator removal, and project link copy feedback.
 - Verification for feature 09: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Started and completed implementation of `context/feature-specs/10-liveblocks-setup.md`.
+- Installed the official `@liveblocks/node` package after confirming the server-side node client dependency was missing.
+- Added Liveblocks presence/user metadata types, cached client helper, deterministic cursor colors, and the authenticated room token route.
+- Verification for feature 10: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Started and completed implementation of `context/feature-specs/11-base-canvas.md`.
+- Added the Liveblocks-backed React Flow canvas wrapper and shared canvas types, keeping `/editor/[roomId]` server-side.
+- Verification for feature 11: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Started and completed implementation of `context/feature-specs/12-shape-panel.md`.
+- Added draggable shape payloads, bottom shape panel, drop-to-create behavior, and a simple custom canvas node renderer.
+- Verification for feature 12: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.

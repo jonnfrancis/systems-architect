@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bot, PanelLeftClose, PanelLeftOpen, Share2 } from "lucide-react";
 
+import { CanvasWorkspace } from "@/components/editor/canvas-workspace";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ShareDialog } from "@/components/editor/share-dialog";
@@ -95,15 +96,8 @@ export function WorkspaceShell({
       />
 
       <section className="flex h-screen pt-14">
-        <div className="flex min-w-0 flex-1 items-center justify-center bg-base px-6">
-          <div className="text-center">
-            <p className="text-sm font-medium text-copy-primary">
-              Canvas workspace
-            </p>
-            <p className="mt-2 max-w-md text-sm leading-6 text-copy-muted">
-              Canvas logic will be added in the next implementation phase.
-            </p>
-          </div>
+        <div className="min-w-0 flex-1 bg-base">
+          <CanvasWorkspace roomId={project.id} />
         </div>
 
         <aside
