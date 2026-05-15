@@ -145,7 +145,7 @@ export function ProjectSidebar({
         </Button>
       </div>
 
-      <Tabs defaultValue={defaultTab} className="min-h-0 flex-1 px-4 py-4">
+      <Tabs key={activeProjectId ?? "no-active"} defaultValue={defaultTab} className="min-h-0 flex-1 px-4 py-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="my-projects">My Projects</TabsTrigger>
           <TabsTrigger value="shared">Shared</TabsTrigger>

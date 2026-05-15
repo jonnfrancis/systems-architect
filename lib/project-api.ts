@@ -47,3 +47,24 @@ export async function findProjectOwner(projectId: string) {
     select: { ownerId: true },
   });
 }
+
+export function validateSameOrigin(request: Request) {
+  try {
+    const expectedOrigin = new URL(request.url).origin;
+
+    const origin = request.headers.get("origin");
+    if (origin) {
+      return origin === expectedOrigin;
+    }
+
+    const referer = request.headers.get("referer");
+    if (referer) {
+      return new URL(referer).origin === expectedOrigin;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Error validating origin/referer:", error);
+    return false;
+  }
+}

@@ -147,7 +147,13 @@ export function ShareDialog({
         response,
       );
 
-      setCollaborators((current) => [...current, data.collaborator]);
+      setCollaborators((current) => {
+        if (current.some((c) => c.id === data.collaborator.id)) {
+          return current;
+        }
+
+        return [...current, data.collaborator];
+      });
       setEmail("");
     } catch (inviteError) {
       setError(
@@ -187,7 +193,12 @@ export function ShareDialog({
   }
 
   async function handleCopyLink() {
-    await navigator.clipboard.writeText(window.location.href);
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+    } catch (error) {
+      console.error("Failed to copy link:", error);
+    }
+    toast.success("Copied!")
     setCopied(true);
   }
 

@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 
 import { jsonError } from "@/lib/project-api";
 import { prisma } from "@/lib/prisma";
+import { validateSameOrigin } from "@/lib/project-api";
 
 interface ProjectCollaboratorRouteContext {
   params: Promise<{
@@ -15,6 +16,10 @@ export async function DELETE(
   _request: Request,
   context: ProjectCollaboratorRouteContext,
 ) {
+  if (!validateSameOrigin(_request)) {
+    return jsonError("Invalid origin", 403);
+  }
+
   const { isAuthenticated, userId } = await auth();
 
   if (!isAuthenticated || !userId) {
@@ -22,8 +27,8 @@ export async function DELETE(
   }
 
   const { projectId, collaboratorId } = await context.params;
-  const collaborator = await prisma.projectCollaborator.findUnique({
-    where: { id: collaboratorId },
+  const collaborator = await prisma.projectCollaborator.findFirst({
+    where: { id: collaboratorId, projectId },
     select: {
       id: true,
       projectId: true,
