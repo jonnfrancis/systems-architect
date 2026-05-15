@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Editor canvas visual fixes complete
+- Feature 14 node editing complete
 
 ## Current Goal
 
@@ -103,6 +103,22 @@ Update this file whenever the current phase, active feature, or implementation s
   - Kept the dotted React Flow canvas visible edge-to-edge behind both floating sidebars.
   - Normalized the Liveblocks auth room ID and used the same value for access checks, room creation, and session permissions.
   - Scoped React Flow and Liveblocks Flow CSS imports to the editor route segment.
+- Feature spec 13 node shape rendering:
+  - Confirmed node shape rendering was already wired to collaborative React Flow state.
+  - Extracted reusable shape-surface rendering so canvas nodes and drag previews share the same CSS/SVG drawing path.
+  - Kept rectangle, pill, and circle rendering CSS-based.
+  - Kept diamond, hexagon, and cylinder rendering SVG-based and scalable with node size.
+  - Added a cursor-attached ghost preview for shape panel dragging.
+  - Cleared the ghost preview on drop and drag cancel without changing drop creation behavior.
+- Feature spec 14 node editing:
+  - Added selected-node resize handles through React Flow `NodeResizer`.
+  - Enforced minimum node dimensions during resizing.
+  - Styled resize controls to stay subtle on the dark canvas.
+  - Added centered inline label editing on node double-click.
+  - Added centered placeholder text for empty labels.
+  - Updated labels through React Flow node data updates so changes continue through the existing collaborative node state flow.
+  - Closed label editing on blur or `Escape`.
+  - Prevented textarea interactions from dragging or panning the canvas.
 
 ## In Progress
 
@@ -110,7 +126,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Feature spec 13 node shape rendering.
+- Feature spec 15.
 
 ## Open Questions
 
@@ -168,3 +184,9 @@ Update this file whenever the current phase, active feature, or implementation s
 - Completed editor canvas visual review and fixes from `context/current-issues.md`.
 - Added per-shape canvas node rendering, floating AI sidebar behavior, full-width canvas treatment, normalized Liveblocks auth room IDs, and editor-scoped React Flow CSS imports.
 - Verification for canvas visual fixes: `npx.cmd next typegen`, `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Started and completed implementation of `context/feature-specs/13-node-shape.md`.
+- Added the missing shape drag preview while preserving the existing Liveblocks-backed node creation flow.
+- Verification for feature 13: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Started and completed implementation of `context/feature-specs/14-node-editing.md`.
+- Added selected-node resizing and double-click inline label editing without changing shape rendering, shape panel behavior, or drop creation.
+- Verification for feature 14: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.

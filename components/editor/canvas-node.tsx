@@ -1,10 +1,28 @@
 "use client";
 
-import type { ReactNode } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+  type SyntheticEvent,
+} from "react";
+import {
+  Handle,
+  NodeResizer,
+  Position,
+  useReactFlow,
+  type NodeProps,
+} from "@xyflow/react";
 
-import type { CanvasNode } from "@/types/canvas";
+import type { CanvasEdge, CanvasNode } from "@/types/canvas";
 import { DEFAULT_NODE_SHAPE } from "@/types/canvas";
+
+const MIN_NODE_HEIGHT = 56;
+const MIN_NODE_WIDTH = 80;
+const EMPTY_LABEL_PLACEHOLDER = "Label";
 
 interface NodeSurfaceProps {
   children?: ReactNode;
@@ -14,10 +32,25 @@ interface NodeSurfaceProps {
   shapeClassName?: string;
 }
 
+interface CanvasShapeSurfaceProps {
+  label: string;
+  selected: boolean;
+  fill: string;
+  text: string;
+  shape: CanvasNode["data"]["shape"];
+  children?: ReactNode;
+}
+
 function NodeLabel({ label }: { label: string }) {
+  const displayLabel = label || EMPTY_LABEL_PLACEHOLDER;
+
   return (
-    <span className="block max-w-full truncate px-4 text-center leading-5">
-      {label}
+    <span
+      className={`block max-w-full truncate px-4 text-center leading-5 ${
+        label ? "" : "text-copy-muted"
+      }`}
+    >
+      {displayLabel}
     </span>
   );
 }
@@ -148,15 +181,129 @@ function SvgNodeSurface({
   );
 }
 
-export function CanvasNodeRenderer({ data, selected }: NodeProps<CanvasNode>) {
+interface EditableNodeLabelProps {
+  label: string;
+  nodeId: string;
+  text: string;
+}
+
+function EditableNodeLabel({ label, nodeId, text }: EditableNodeLabelProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { updateNodeData } = useReactFlow<CanvasNode, CanvasEdge>();
+
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+
+    const textarea = textareaRef.current;
+
+    textarea?.focus();
+    textarea?.select();
+  }, [isEditing]);
+
+  const updateLabel = useCallback(
+    (nextLabel: string) => {
+      updateNodeData(nodeId, { label: nextLabel });
+    },
+    [nodeId, updateNodeData],
+  );
+
+  function stopTextInteraction(event: SyntheticEvent) {
+    event.stopPropagation();
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    event.stopPropagation();
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      setIsEditing(false);
+    }
+  }
+
+  if (isEditing) {
+    return (
+      <textarea
+        ref={textareaRef}
+        aria-label="Node label"
+        className="nodrag nopan nowheel absolute left-1/2 top-1/2 h-12 w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 resize-none overflow-hidden border-0 bg-transparent px-3 py-3 text-center text-sm font-medium leading-5 outline-none placeholder:text-copy-muted"
+        placeholder={EMPTY_LABEL_PLACEHOLDER}
+        value={label}
+        style={{ color: text }}
+        onBlur={() => setIsEditing(false)}
+        onChange={(event) => updateLabel(event.target.value)}
+        onClick={stopTextInteraction}
+        onDoubleClick={stopTextInteraction}
+        onKeyDown={handleKeyDown}
+        onMouseDown={stopTextInteraction}
+        onPointerDown={stopTextInteraction}
+        onTouchStart={stopTextInteraction}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="nodrag nopan absolute inset-0 flex h-full w-full items-center justify-center border-0 bg-transparent p-0 text-sm font-medium"
+      onDoubleClick={(event) => {
+        event.stopPropagation();
+        setIsEditing(true);
+      }}
+    >
+      <NodeLabel label={label} />
+    </button>
+  );
+}
+
+export function CanvasNodeRenderer({
+  data,
+  id,
+  selected,
+}: NodeProps<CanvasNode>) {
   const shape = data.shape ?? DEFAULT_NODE_SHAPE;
   const label = data.label || "";
   const fill = data.color.fill;
   const text = data.color.text;
-  const content = <NodeLabel label={label} />;
 
   return (
-    <div className="group h-full w-full">
+    <div className="group relative h-full w-full">
+      <NodeResizer
+        isVisible={selected}
+        minHeight={MIN_NODE_HEIGHT}
+        minWidth={MIN_NODE_WIDTH}
+        color={text}
+        lineClassName="opacity-40"
+        handleClassName="h-2.5 w-2.5 border border-background bg-copy-primary opacity-80"
+      />
+      <CanvasShapeSurface
+        label={label}
+        selected={selected}
+        fill={fill}
+        text={text}
+        shape={shape}
+      >
+        <EditableNodeLabel label={label} nodeId={id} text={text} />
+      </CanvasShapeSurface>
+      <NodeHandles />
+    </div>
+  );
+}
+
+export function CanvasShapeSurface({
+  label,
+  selected,
+  fill,
+  text,
+  shape,
+  children,
+}: CanvasShapeSurfaceProps) {
+  const content = children ?? <NodeLabel label={label} />;
+
+  return (
+    <>
       {shape === "rectangle" ? (
         <BasicNodeSurface selected={selected} fill={fill} text={text}>
           {content}
@@ -195,8 +342,6 @@ export function CanvasNodeRenderer({ data, selected }: NodeProps<CanvasNode>) {
           {content}
         </SvgNodeSurface>
       ) : null}
-
-      <NodeHandles />
-    </div>
+    </>
   );
 }

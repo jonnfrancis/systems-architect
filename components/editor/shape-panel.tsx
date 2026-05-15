@@ -78,16 +78,32 @@ function createShapePayload(definition: ShapeDefinition): ShapeDragPayload {
   };
 }
 
-export function ShapePanel() {
+interface ShapePanelProps {
+  onShapeDragEnd?: () => void;
+  onShapeDragStart?: (
+    payload: ShapeDragPayload,
+    position: { x: number; y: number },
+  ) => void;
+}
+
+export function ShapePanel({
+  onShapeDragEnd,
+  onShapeDragStart,
+}: ShapePanelProps) {
   function handleDragStart(
     event: DragEvent<HTMLButtonElement>,
     definition: ShapeDefinition,
   ) {
+    const payload = createShapePayload(definition);
+    const dragImage = document.createElement("canvas");
+
+    dragImage.width = 1;
+    dragImage.height = 1;
+
     event.dataTransfer.effectAllowed = "copy";
-    event.dataTransfer.setData(
-      SHAPE_DRAG_MIME_TYPE,
-      JSON.stringify(createShapePayload(definition)),
-    );
+    event.dataTransfer.setData(SHAPE_DRAG_MIME_TYPE, JSON.stringify(payload));
+    event.dataTransfer.setDragImage(dragImage, 0, 0);
+    onShapeDragStart?.(payload, { x: event.clientX, y: event.clientY });
   }
 
   return (
@@ -105,6 +121,7 @@ export function ShapePanel() {
             aria-label={`Add ${definition.label}`}
             title={definition.label}
             onDragStart={(event) => handleDragStart(event, definition)}
+            onDragEnd={onShapeDragEnd}
           >
             <Icon className="h-5 w-5" />
           </Button>

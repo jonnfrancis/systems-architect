@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, type DragEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
 import {
   ClientSideSuspense,
   LiveblocksProvider,
@@ -18,7 +25,10 @@ import {
   type ReactFlowInstance,
 } from "@xyflow/react";
 
-import { CanvasNodeRenderer } from "@/components/editor/canvas-node";
+import {
+  CanvasNodeRenderer,
+  CanvasShapeSurface,
+} from "@/components/editor/canvas-node";
 import { ShapePanel } from "@/components/editor/shape-panel";
 import type { CanvasEdge, CanvasNode } from "@/types/canvas";
 import {
@@ -33,6 +43,14 @@ import {
 
 interface CanvasWorkspaceProps {
   roomId: string;
+}
+
+interface ShapeDragPreviewState {
+  payload: ShapeDragPayload;
+  position: {
+    x: number;
+    y: number;
+  };
 }
 
 function CanvasLoadingState() {
@@ -116,6 +134,8 @@ function parseShapeDragPayload(dataTransfer: DataTransfer) {
 function SyncedReactFlowCanvas() {
   const [reactFlowInstance, setReactFlowInstance] =
     useState<ReactFlowInstance<CanvasNode, CanvasEdge> | null>(null);
+  const [shapeDragPreview, setShapeDragPreview] =
+    useState<ShapeDragPreviewState | null>(null);
   const nodeCounter = useRef(0);
   const nodeTypes = useMemo<NodeTypes>(
     () => ({
@@ -140,6 +160,49 @@ function SyncedReactFlowCanvas() {
     },
   });
 
+  useEffect(() => {
+    if (!shapeDragPreview) {
+      return;
+    }
+
+    function handleWindowDragOver(event: globalThis.DragEvent) {
+      setShapeDragPreview((current) =>
+        current
+          ? {
+              ...current,
+              position: {
+                x: event.clientX,
+                y: event.clientY,
+              },
+            }
+          : null,
+      );
+    }
+
+    function handleWindowDragEnd() {
+      setShapeDragPreview(null);
+    }
+
+    window.addEventListener("dragover", handleWindowDragOver);
+    window.addEventListener("dragend", handleWindowDragEnd);
+
+    return () => {
+      window.removeEventListener("dragover", handleWindowDragOver);
+      window.removeEventListener("dragend", handleWindowDragEnd);
+    };
+  }, [shapeDragPreview]);
+
+  const handleShapeDragStart = useCallback(
+    (payload: ShapeDragPayload, position: { x: number; y: number }) => {
+      setShapeDragPreview({ payload, position });
+    },
+    [],
+  );
+
+  const clearShapeDragPreview = useCallback(() => {
+    setShapeDragPreview(null);
+  }, []);
+
   const handleDragOver = useCallback((event: DragEvent<HTMLDivElement>) => {
     if (event.dataTransfer.types.includes(SHAPE_DRAG_MIME_TYPE)) {
       event.preventDefault();
@@ -150,6 +213,7 @@ function SyncedReactFlowCanvas() {
   const handleDrop = useCallback(
     (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault();
+      clearShapeDragPreview();
 
       const payload = parseShapeDragPayload(event.dataTransfer);
 
@@ -181,7 +245,7 @@ function SyncedReactFlowCanvas() {
 
       onNodesChange([{ type: "add", item: node }]);
     },
-    [onNodesChange, reactFlowInstance],
+    [clearShapeDragPreview, onNodesChange, reactFlowInstance],
   );
 
   return (
@@ -225,7 +289,31 @@ function SyncedReactFlowCanvas() {
         />
         <Cursors />
       </ReactFlow>
-      <ShapePanel />
+      {shapeDragPreview ? (
+        <div
+          className="pointer-events-none fixed z-50 opacity-70"
+          style={{
+            height: shapeDragPreview.payload.height,
+            left:
+              shapeDragPreview.position.x - shapeDragPreview.payload.width / 2,
+            top:
+              shapeDragPreview.position.y - shapeDragPreview.payload.height / 2,
+            width: shapeDragPreview.payload.width,
+          }}
+        >
+          <CanvasShapeSurface
+            label=""
+            selected
+            fill={DEFAULT_NODE_COLOR.fill}
+            text={DEFAULT_NODE_COLOR.text}
+            shape={shapeDragPreview.payload.shape}
+          />
+        </div>
+      ) : null}
+      <ShapePanel
+        onShapeDragStart={handleShapeDragStart}
+        onShapeDragEnd={clearShapeDragPreview}
+      />
     </div>
   );
 }
