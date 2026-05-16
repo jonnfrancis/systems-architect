@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 18 starter templates complete
+- Feature 21 canvas autosave complete
 
 ## Current Goal
 
@@ -162,6 +162,27 @@ Update this file whenever the current phase, active feature, or implementation s
   - Kept edge label draft text aligned with collaborative label updates when the edge is not actively being edited.
   - Normalized node and edge label commits by trimming and collapsing whitespace.
   - Memoized starter template preview node lookups by node ID.
+- Feature spec 19 presence avatars and cursors:
+  - Added room-scoped participant avatars inside the editor canvas view without changing the editor home navbar.
+  - Filtered Liveblocks participants against the active Clerk user ID and rendered the current user through Clerk `UserButton`.
+  - Rendered up to five collaborator avatars with photo, initials, and overflow fallback states.
+  - Broadcast cursor position through Liveblocks presence from React Flow mouse movement and cleared it on mouse leave or unmount.
+  - Added custom live cursor rendering for other participants only, using each participant's cursor color and display name.
+  - Updated the shared Liveblocks presence type to use `thinking`.
+- Feature spec 20 AI sidebar shell:
+  - Extracted the floating AI sidebar into a dedicated parent-controlled component.
+  - Preserved the right-side floating placement, slide-in/out behavior, border, backdrop, and shadow treatment.
+  - Added the AI Workspace header with bot icon, subtitle, and close action.
+  - Added shadcn Tabs for AI Architect and Specs views.
+  - Built the AI Architect empty state, starter prompt chips, local demo message rendering, auto-resizing textarea, and Enter-to-send behavior.
+  - Built the Specs view with a Generate Spec button and static demo spec card with disabled download action.
+- Feature spec 21 canvas autosave:
+  - Installed `@vercel/blob`.
+  - Confirmed the existing `Project.canvasJsonPath` field stores the canvas Blob URL while Prisma remains metadata-only.
+  - Added `GET` and `PUT /api/projects/[projectId]/canvas` with project access checks, canvas JSON validation, Vercel Blob storage, and Prisma URL persistence.
+  - Added a debounced `useCanvasAutosave` hook that tracks `saving`, `saved`, and `error` states.
+  - Loaded saved canvas JSON into Liveblocks only when the active room has no nodes or edges.
+  - Added a navbar Save status indicator for autosave state.
 
 ## In Progress
 
@@ -169,7 +190,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- Feature spec 19.
+- Feature spec 22.
 
 ## Open Questions
 
@@ -251,3 +272,13 @@ Update this file whenever the current phase, active feature, or implementation s
 - Completed canvas template and label bug review.
 - Fixed connection edge IDs, atomic template import replacement, collaborative edge label draft syncing, node label normalization, and template preview node lookup performance.
 - Verification for canvas template and label bug review: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed.
+- Started implementation of `context/feature-specs/19-presence-avatars-cursors.md`.
+- Completed implementation of `context/feature-specs/19-presence-avatars-cursors.md`.
+- Added canvas-only collaborator avatars, Clerk `UserButton` grouping, filtered live cursor rendering, and Liveblocks cursor presence updates.
+- Verification for feature 19: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed.
+- Started and completed implementation of `context/feature-specs/20-ai-sidebar-shell.md`.
+- Added the extracted AI sidebar component with tabbed AI Architect and Specs UI, prompt chips, local demo messages, textarea submit handling, and static spec card.
+- Verification for feature 20: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Started and completed implementation of `context/feature-specs/21-canvas-autosave.md`.
+- Added `@vercel/blob`, canvas snapshot validation, authenticated canvas save/load routes, debounced autosave, empty-room saved canvas loading, and the editor Save status indicator.
+- Verification for feature 21: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.

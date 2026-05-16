@@ -78,3 +78,30 @@
 - `npx.cmd tsc --noEmit --incremental false` passed.
 - `npm.cmd run lint` passed.
 - `npm.cmd run build` passed with elevated network access for Google Fonts.
+
+
+### 1. Delete Nodese and Edges
+REad Liveblocks agent skills before implementing this. Then read the canvas wrapper component and the existing node and edge mutation helpers.
+Selected nodes and edges cannot be delete from the canvas
+
+Add a keydown event listener to the canvas wrapper that:
+-Listens for Delete and Backspace keys
+-does not fire when the event target is an input, textarea or contenteditable element
+-gets currently selected nodes using useNodes filtered by selected state
+- removes the using the existing Liveblocks collaborative mutation helpers
+
+Do not use React Flow's built-in deleteKeyCode or any React Flow keyboard deletion behaviour. All deletions must go through the existing Liveblocks collaborative state so they sync across all connected clients in real time.
+Do not change anything else
+
+### 2. Node Connection Handles
+Read liveblocks agent skills before implementing this. Nodes can only be connected from the top handle. All four handles - top, right, bottom, left - should be active and connectable. Check the existing Handle components in the custom node renderer. Verify each handle as the correct position prop and that no CSS is hiding or disabling the non-top handles. Connection between any two handles on any two nodes should work and sync through the existing Liveblocks edge state.
+
+### 3. Collaborator Avatar Image Error
+Check Clerk agent skills before implementing this.
+Add img.clerk.com to the allowed image hostnames in next.config.ts using the correct remotePatterns configuration.
+
+## scope
+- fix only what is listed above
+- Do not change canvas node or edge rendering behaviour
+- Do not break existing autosave, presence, or collaboration logic
+- npm run build passes

@@ -2,13 +2,18 @@
 
 import { useState } from "react";
 import {
+  AlertCircle,
   Bot,
+  CheckCircle2,
   LayoutTemplate,
+  Loader2,
   PanelLeftClose,
   PanelLeftOpen,
+  Save,
   Share2,
 } from "lucide-react";
 
+import { AiSidebar } from "@/components/editor/ai-sidebar";
 import { CanvasWorkspace } from "@/components/editor/canvas-workspace";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
@@ -18,6 +23,7 @@ import type { CanvasTemplate } from "@/components/editor/starter-templates";
 import { Button } from "@/components/ui/button";
 import { useProjectActions } from "@/hooks/use-project-actions";
 import { cn } from "@/lib/utils";
+import type { CanvasSaveStatus } from "@/hooks/use-canvas-autosave";
 import type { ProjectSummary } from "@/types/project";
 
 interface WorkspaceShellProps {
@@ -31,6 +37,30 @@ interface TemplateImportRequest {
   template: CanvasTemplate;
 }
 
+function getSaveStatusDisplay(status: CanvasSaveStatus) {
+  if (status === "saving") {
+    return {
+      className: "text-copy-muted",
+      icon: <Loader2 className="h-4 w-4 animate-spin" />,
+      label: "Saving",
+    };
+  }
+
+  if (status === "error") {
+    return {
+      className: "text-state-error",
+      icon: <AlertCircle className="h-4 w-4" />,
+      label: "Error",
+    };
+  }
+
+  return {
+    className: "text-state-success",
+    icon: <CheckCircle2 className="h-4 w-4" />,
+    label: "Saved",
+  };
+}
+
 export function WorkspaceShell({
   project,
   ownedProjects,
@@ -40,10 +70,12 @@ export function WorkspaceShell({
   const [isAiSidebarOpen, setIsAiSidebarOpen] = useState(true);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isStarterTemplatesOpen, setIsStarterTemplatesOpen] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<CanvasSaveStatus>("saved");
   const [templateImportRequest, setTemplateImportRequest] =
     useState<TemplateImportRequest | null>(null);
   const projectActions = useProjectActions();
   const SidebarIcon = isSidebarOpen ? PanelLeftClose : PanelLeftOpen;
+  const saveStatusDisplay = getSaveStatusDisplay(saveStatus);
 
   function importTemplate(template: CanvasTemplate) {
     setTemplateImportRequest((current) => ({
@@ -76,6 +108,20 @@ export function WorkspaceShell({
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled
+            className={cn(
+              "disabled:opacity-100",
+              saveStatusDisplay.className,
+            )}
+          >
+            <Save className="h-4 w-4" />
+            {saveStatusDisplay.icon}
+            {saveStatusDisplay.label}
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -129,31 +175,15 @@ export function WorkspaceShell({
 
       <section className="h-screen pt-14">
         <CanvasWorkspace
+          onSaveStatusChange={setSaveStatus}
           roomId={project.id}
           templateImportRequest={templateImportRequest}
         />
 
-        <aside
-          className={cn(
-            "fixed right-4 top-18 z-30 hidden h-[calc(100vh-5rem)] w-80 flex-col rounded-2xl border border-surface-border bg-surface/95 shadow-2xl shadow-background/40 backdrop-blur transition-transform duration-200 ease-out lg:flex",
-            isAiSidebarOpen
-              ? "translate-x-0"
-              : "pointer-events-none translate-x-[calc(100%+2rem)]",
-          )}
-          aria-hidden={!isAiSidebarOpen}
-          inert={!isAiSidebarOpen}
-        >
-          <div className="flex h-full flex-col">
-            <div className="flex h-14 shrink-0 items-center border-b border-surface-border px-4">
-              <p className="text-sm font-semibold text-copy-primary">AI Chat</p>
-            </div>
-            <div className="flex flex-1 items-center justify-center px-5 text-center">
-              <p className="text-sm leading-6 text-copy-muted">
-                AI sidebar placeholder.
-              </p>
-            </div>
-          </div>
-        </aside>
+        <AiSidebar
+          isOpen={isAiSidebarOpen}
+          onClose={() => setIsAiSidebarOpen(false)}
+        />
       </section>
 
       <ProjectDialogs
