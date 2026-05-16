@@ -4,7 +4,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 21 canvas autosave complete
+- Canvas deletion, handles, avatar host, and autosave hardening pass complete
 
 ## Current Goal
 
@@ -183,6 +183,15 @@ Update this file whenever the current phase, active feature, or implementation s
   - Added a debounced `useCanvasAutosave` hook that tracks `saving`, `saved`, and `error` states.
   - Loaded saved canvas JSON into Liveblocks only when the active room has no nodes or edges.
   - Added a navbar Save status indicator for autosave state.
+- Canvas deletion, handles, avatar host, and autosave hardening pass:
+  - Documented the findings and fixes in `context/current-issues.md`.
+  - Added Delete and Backspace removal for selected canvas nodes and edges through Liveblocks React Flow change handlers.
+  - Added explicit top, right, bottom, and left handle IDs for custom nodes.
+  - Added `img.clerk.com` to Next image remote patterns.
+  - Hardened canvas snapshot validation, autosave request size limits, and saved Blob reference checks.
+  - Treated missing saved canvas Blob content as an empty state.
+  - Throttled cursor presence updates with `requestAnimationFrame`.
+  - Added a Node runtime engine requirement of `>=20.9.0`.
 
 ## In Progress
 
@@ -282,3 +291,5 @@ Update this file whenever the current phase, active feature, or implementation s
 - Started and completed implementation of `context/feature-specs/21-canvas-autosave.md`.
 - Added `@vercel/blob`, canvas snapshot validation, authenticated canvas save/load routes, debounced autosave, empty-room saved canvas loading, and the editor Save status indicator.
 - Verification for feature 21: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.
+- Completed canvas deletion, handles, avatar host, and autosave hardening pass from `context/current-issues.md`.
+- Verification for hardening pass: `npx.cmd next typegen`, `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed. The sandboxed build failed only because Next could not fetch Google Fonts without network access.

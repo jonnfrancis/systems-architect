@@ -65,29 +65,24 @@ function NodeLabel({ label }: { label: string }) {
 function NodeHandles() {
   const handleClassName =
     "h-2.5 w-2.5 border border-background bg-copy-primary opacity-0 transition-opacity group-hover:opacity-100";
+  const positions = [
+    Position.Top,
+    Position.Right,
+    Position.Bottom,
+    Position.Left,
+  ];
 
   return (
     <>
-      <Handle
-        type="source"
-        position={Position.Top}
-        className={handleClassName}
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className={handleClassName}
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className={handleClassName}
-      />
-      <Handle
-        type="source"
-        position={Position.Left}
-        className={handleClassName}
-      />
+      {positions.map((position) => (
+        <Handle
+          key={position}
+          id={position}
+          type="source"
+          position={position}
+          className={handleClassName}
+        />
+      ))}
     </>
   );
 }

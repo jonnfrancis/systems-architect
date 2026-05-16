@@ -8,14 +8,79 @@ import {
 import { jsonError } from "@/lib/project-api";
 import { prisma } from "@/lib/prisma";
 
+const MAX_CANVAS_REQUEST_BYTES = 1_000_000;
+
+interface CanvasRequestJsonError {
+  error: string;
+  status: 400 | 413;
+}
+
+interface CanvasRequestJsonSuccess {
+  body: unknown;
+}
+
 interface ProjectCanvasRouteContext {
   params: Promise<{
     projectId: string;
   }>;
 }
 
-async function readBlobJson(url: string) {
-  const result = await get(url, {
+function getSafeCanvasBlobReference(value: string, projectId: string) {
+  const expectedPathname = `/canvas/${projectId}.json`;
+  const expectedKey = `canvas/${projectId}.json`;
+
+  if (value === expectedKey) {
+    return value;
+  }
+
+  try {
+    const url = new URL(value);
+
+    if (
+      url.protocol === "https:" &&
+      url.hostname.endsWith(".blob.vercel-storage.com") &&
+      url.pathname === expectedPathname
+    ) {
+      return value;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+async function readCanvasRequestJson(
+  request: Request,
+): Promise<CanvasRequestJsonError | CanvasRequestJsonSuccess> {
+  const contentLength = request.headers.get("content-length");
+
+  if (
+    contentLength &&
+    Number.isFinite(Number(contentLength)) &&
+    Number(contentLength) > MAX_CANVAS_REQUEST_BYTES
+  ) {
+    return { error: "Canvas JSON is too large.", status: 413 } as const;
+  }
+
+  const text = await request.text();
+
+  if (text.length > MAX_CANVAS_REQUEST_BYTES) {
+    return { error: "Canvas JSON is too large.", status: 413 } as const;
+  }
+
+  try {
+    return { body: JSON.parse(text) as unknown } as const;
+  } catch {
+    return {
+      error: "Request body must be valid canvas JSON.",
+      status: 400,
+    } as const;
+  }
+}
+
+async function readBlobJson(blobReference: string) {
+  const result = await get(blobReference, {
     access: "private",
     useCache: false,
   });
@@ -25,6 +90,15 @@ async function readBlobJson(url: string) {
   }
 
   return new Response(result.stream).json();
+}
+
+function isBlobNotFoundError(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "name" in error &&
+    error.name === "BlobNotFoundError"
+  );
 }
 
 export async function GET(
@@ -53,11 +127,20 @@ export async function GET(
     return Response.json({ canvas: null });
   }
 
+  const blobReference = getSafeCanvasBlobReference(
+    canvasProject.canvasJsonPath,
+    projectId,
+  );
+
+  if (!blobReference) {
+    return jsonError("Saved canvas reference is invalid.", 500);
+  }
+
   try {
-    const canvas = await readBlobJson(canvasProject.canvasJsonPath);
+    const canvas = await readBlobJson(blobReference);
 
     if (!canvas) {
-      return jsonError("Saved canvas not found.", 404);
+      return Response.json({ canvas: null });
     }
 
     if (!isCanvasSnapshot(canvas)) {
@@ -69,6 +152,10 @@ export async function GET(
       canvasJsonPath: canvasProject.canvasJsonPath,
     });
   } catch (error) {
+    if (isBlobNotFoundError(error)) {
+      return Response.json({ canvas: null });
+    }
+
     console.error("Error loading canvas:", error);
     return jsonError("Failed to load canvas.", 500);
   }
@@ -91,22 +178,20 @@ export async function PUT(
     return jsonError("Project not found.", 404);
   }
 
-  let body: unknown;
+  const parsed = await readCanvasRequestJson(request);
 
-  try {
-    body = await request.json();
-  } catch {
-    return jsonError("Request body must be valid canvas JSON.", 400);
+  if ("error" in parsed) {
+    return jsonError(parsed.error, parsed.status);
   }
 
-  if (!isCanvasSnapshot(body)) {
+  if (!isCanvasSnapshot(parsed.body)) {
     return jsonError("Request body must include canvas nodes and edges.", 400);
   }
 
   try {
     const blob = await put(
       `canvas/${projectId}.json`,
-      JSON.stringify(body),
+      JSON.stringify(parsed.body),
       {
         access: "private",
         allowOverwrite: true,

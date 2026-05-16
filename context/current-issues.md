@@ -100,6 +100,16 @@ Read liveblocks agent skills before implementing this. Nodes can only be connect
 Check Clerk agent skills before implementing this.
 Add img.clerk.com to the allowed image hostnames in next.config.ts using the correct remotePatterns configuration.
 
+### 4. Potential Bugs & Fixes
+- Harden canvasJsonPath handling: validate/allowlist blob URL or key before calling @vercel/blob get()
+- Add request size limits and stricter snapshot validation (node/edge counts and field sizes) for canvas autosave PUT
+- Audit and update all Liveblocks presence usage to match the new `thinking` field (or add backward-compatible mapping)
+- Align runtime/CI Node version to >=20 or replace @vercel/blob with a compatible alternative
+- Update saved canvas loader to treat 404 as a normal empty state and avoid error logging
+- Fix type mismatch between CanvasTemplate and CanvasSnapshot when creating Liveblocks flow storage
+- Strengthen canvas snapshot validation to ensure required React Flow node/edge fields exist before saving/loading
+- Throttle Liveblocks cursor presence updates to reduce network chatter
+
 ## scope
 - fix only what is listed above
 - Do not change canvas node or edge rendering behaviour
