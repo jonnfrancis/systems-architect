@@ -14,11 +14,16 @@ import {
   RoomProvider,
   useErrorListener,
 } from "@liveblocks/react/suspense";
-import { useCanRedo, useCanUndo, useHistory } from "@liveblocks/react";
+import { LiveMap, LiveObject, type JsonObject } from "@liveblocks/core";
+import {
+  useCanRedo,
+  useCanUndo,
+  useHistory,
+  useMutation,
+} from "@liveblocks/react";
 import { Cursors, useLiveblocksFlow } from "@liveblocks/react-flow";
 import { Maximize2, Redo2, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 import {
-  addEdge,
   Background,
   BackgroundVariant,
   ConnectionMode,
@@ -51,6 +56,10 @@ import {
   type CanvasNodeShape,
   type ShapeDragPayload,
 } from "@/types/canvas";
+
+const LIVEBLOCKS_FLOW_STORAGE_KEY = "flow";
+
+type CanvasFlowStorage = NonNullable<Liveblocks["Storage"]["flow"]>;
 
 interface CanvasWorkspaceProps {
   roomId: string;
@@ -156,6 +165,44 @@ function parseShapeDragPayload(dataTransfer: DataTransfer) {
   }
 
   return null;
+}
+
+function createConnectionEdgeId(connection: Connection, edges: CanvasEdge[]) {
+  const sourceHandle = connection.sourceHandle ?? "source";
+  const targetHandle = connection.targetHandle ?? "target";
+  const baseId = `edge-${connection.source}-${sourceHandle}-${connection.target}-${targetHandle}`;
+  const existingIds = new Set(edges.map((edge) => edge.id));
+
+  if (!existingIds.has(baseId)) {
+    return baseId;
+  }
+
+  let suffix = 2;
+  let nextId = `${baseId}-${suffix}`;
+
+  while (existingIds.has(nextId)) {
+    suffix += 1;
+    nextId = `${baseId}-${suffix}`;
+  }
+
+  return nextId;
+}
+
+function createTemplateFlow(template: CanvasTemplate): CanvasFlowStorage {
+  return new LiveObject({
+    nodes: new LiveMap(
+      template.nodes.map((node) => [
+        node.id,
+        LiveObject.from(node as unknown as JsonObject),
+      ]),
+    ),
+    edges: new LiveMap(
+      template.edges.map((edge) => [
+        edge.id,
+        LiveObject.from(edge as unknown as JsonObject),
+      ]),
+    ),
+  }) as unknown as CanvasFlowStorage;
 }
 
 function CanvasControlBar({
@@ -295,6 +342,12 @@ function SyncedReactFlowCanvas({
       initial: [],
     },
   });
+  const replaceCanvasWithTemplate = useMutation(
+    ({ storage }, template: CanvasTemplate) => {
+      storage.set(LIVEBLOCKS_FLOW_STORAGE_KEY, createTemplateFlow(template));
+    },
+    [],
+  );
 
   const clearShapeDragPreview = useCallback(() => {
     if (previewFrameRef.current !== null) {
@@ -385,30 +438,14 @@ function SyncedReactFlowCanvas({
     }
 
     importedTemplateRequestIdRef.current = templateImportRequest.id;
-    onDelete({ nodes, edges });
-    onNodesChange(
-      templateImportRequest.template.nodes.map((node) => ({
-        type: "add",
-        item: node,
-      })),
-    );
-    onEdgesChange(
-      templateImportRequest.template.edges.map((edge) => ({
-        type: "add",
-        item: edge,
-      })),
-    );
+    replaceCanvasWithTemplate(templateImportRequest.template);
 
     window.requestAnimationFrame(() => {
       void reactFlowInstance?.fitView({ duration: 180, padding: 0.25 });
     });
   }, [
-    edges,
-    nodes,
-    onDelete,
-    onEdgesChange,
-    onNodesChange,
     reactFlowInstance,
+    replaceCanvasWithTemplate,
     templateImportRequest,
   ]);
 
@@ -466,21 +503,21 @@ function SyncedReactFlowCanvas({
 
   const handleConnect = useCallback(
     (connection: Connection) => {
-      const [edge] = addEdge<CanvasEdge>(
-        {
-          ...connection,
-          ...defaultCanvasEdgeOptions,
-        },
-        [],
-      );
-
-      if (!edge) {
-        return;
-      }
+      const edge: CanvasEdge = {
+        data: { label: "" },
+        id: createConnectionEdgeId(connection, edges),
+        markerEnd: defaultCanvasEdgeOptions.markerEnd,
+        source: connection.source,
+        sourceHandle: connection.sourceHandle,
+        style: defaultCanvasEdgeOptions.style,
+        target: connection.target,
+        targetHandle: connection.targetHandle,
+        type: CANVAS_EDGE_TYPE,
+      };
 
       onEdgesChange([{ type: "add", item: edge }]);
     },
-    [defaultCanvasEdgeOptions, onEdgesChange],
+    [defaultCanvasEdgeOptions, edges, onEdgesChange],
   );
 
   const handleZoomIn = useCallback(() => {

@@ -22,6 +22,10 @@ const EDGE_LABEL_HINT = "Label";
 const EDGE_LABEL_MIN_CHARS = 5;
 const EDGE_LABEL_MAX_CHARS = 28;
 
+function normalizeLabel(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
 function stopLabelInteraction(event: SyntheticEvent) {
   event.stopPropagation();
 }
@@ -47,6 +51,7 @@ export function CanvasEdgeRenderer({
   const isActive = selected || isHovered || isEditing;
   const hasLabel = label.trim().length > 0;
   const shouldShowLabel = hasLabel || isActive;
+  const inputLabel = isEditing ? draftLabel : label;
   const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourcePosition,
     sourceX,
@@ -59,7 +64,7 @@ export function CanvasEdgeRenderer({
 
   const saveLabel = useCallback(
     (nextLabel: string) => {
-      updateEdgeData(id, { label: nextLabel.trim() });
+      updateEdgeData(id, { label: normalizeLabel(nextLabel) });
     },
     [id, updateEdgeData],
   );
@@ -79,7 +84,10 @@ export function CanvasEdgeRenderer({
   }
 
   function closeEditing() {
-    saveLabel(draftLabel);
+    const nextLabel = normalizeLabel(draftLabel);
+
+    setDraftLabel(nextLabel);
+    saveLabel(nextLabel);
     setIsEditing(false);
   }
 
@@ -97,7 +105,7 @@ export function CanvasEdgeRenderer({
   }
 
   const labelWidth = `${Math.min(
-    Math.max(draftLabel.length + 1, EDGE_LABEL_MIN_CHARS),
+    Math.max(inputLabel.length + 1, EDGE_LABEL_MIN_CHARS),
     EDGE_LABEL_MAX_CHARS,
   )}ch`;
 
@@ -153,7 +161,8 @@ export function CanvasEdgeRenderer({
                 ref={inputRef}
                 aria-label="Edge label"
                 className="rounded-full border border-surface-border bg-surface/95 px-2.5 py-1 text-center text-xs font-medium text-copy-primary shadow-lg shadow-background/30 outline-none placeholder:text-copy-faint focus:border-brand"
-                value={draftLabel}
+                value={inputLabel}
+                maxLength={EDGE_LABEL_MAX_CHARS}
                 placeholder={EDGE_LABEL_HINT}
                 style={{ width: labelWidth }}
                 onBlur={closeEditing}

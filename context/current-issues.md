@@ -54,3 +54,27 @@
 - `npx.cmd tsc --noEmit --incremental false` passed.
 - `npm.cmd run lint` passed.
 - `npm.cmd run build` passed with elevated network access for Google Fonts.
+
+## Canvas Template And Label Bug Review
+
+### Findings
+
+- `handleConnect` built a new edge through `addEdge(..., [])`, so duplicate connection IDs could be generated because the current edge set was not part of ID creation.
+- Starter template import deleted and added nodes/edges through separate change batches derived from render-time snapshots, making replacement vulnerable to stale state under collaboration.
+- Edge label editing kept an independent `draftLabel` initialized from the original label, so remote label changes could be overwritten when editing reopened or saved from stale local state.
+- Node label commits accepted raw whitespace while edge labels trimmed user input, allowing whitespace-only node labels and inconsistent label behavior.
+- Template previews resolved each edge endpoint with repeated `template.nodes.find(...)` calls.
+
+### Fixes
+
+- Generated connection edge IDs explicitly from source, target, handles, and existing edge IDs before adding the edge.
+- Replaced starter template import with a single Liveblocks storage mutation that swaps the whole React Flow-backed `flow` object.
+- Rendered edge label input text from the live collaborative label whenever the edge is not actively being edited.
+- Normalized node and edge label commits by trimming and collapsing whitespace.
+- Added a memoized `nodeId -> node` map for starter template preview edge rendering.
+
+### Verification
+
+- `npx.cmd tsc --noEmit --incremental false` passed.
+- `npm.cmd run lint` passed.
+- `npm.cmd run build` passed with elevated network access for Google Fonts.

@@ -27,6 +27,10 @@ const MIN_NODE_WIDTH = 80;
 const EMPTY_LABEL_PLACEHOLDER = "Label";
 const LABEL_UPDATE_DELAY_MS = 200;
 
+function normalizeLabel(value: string) {
+  return value.trim().replace(/\s+/g, " ");
+}
+
 interface NodeSurfaceProps {
   children?: ReactNode;
   selected: boolean;
@@ -289,7 +293,7 @@ function EditableNodeLabel({ label, nodeId, text }: EditableNodeLabelProps) {
 
   const commitLabel = useCallback(
     (nextLabel: string) => {
-      updateNodeData(nodeId, { label: nextLabel });
+      updateNodeData(nodeId, { label: normalizeLabel(nextLabel) });
     },
     [nodeId, updateNodeData],
   );
@@ -345,7 +349,10 @@ function EditableNodeLabel({ label, nodeId, text }: EditableNodeLabelProps) {
   }
 
   function closeEditing() {
-    flushLabelUpdate(draftLabel);
+    const nextLabel = normalizeLabel(draftLabel);
+
+    setDraftLabel(nextLabel);
+    flushLabelUpdate(nextLabel);
     setIsEditing(false);
   }
 

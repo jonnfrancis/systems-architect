@@ -82,6 +82,10 @@ function TemplatePreview({ template }: { template: CanvasTemplate }) {
     () => getPreviewBounds(template.nodes),
     [template.nodes],
   );
+  const nodesById = useMemo(
+    () => new Map(template.nodes.map((node) => [node.id, node])),
+    [template.nodes],
+  );
   const scale = Math.min(
     (PREVIEW_WIDTH - PREVIEW_PADDING * 2) / bounds.width,
     (PREVIEW_HEIGHT - PREVIEW_PADDING * 2) / bounds.height,
@@ -106,8 +110,8 @@ function TemplatePreview({ template }: { template: CanvasTemplate }) {
       viewBox={`0 0 ${PREVIEW_WIDTH} ${PREVIEW_HEIGHT}`}
     >
       {template.edges.map((edge) => {
-        const source = template.nodes.find((node) => node.id === edge.source);
-        const target = template.nodes.find((node) => node.id === edge.target);
+        const source = nodesById.get(edge.source);
+        const target = nodesById.get(edge.target);
 
         if (!source || !target) {
           return null;

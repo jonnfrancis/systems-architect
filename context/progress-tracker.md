@@ -154,8 +154,14 @@ Update this file whenever the current phase, active feature, or implementation s
   - Added a starter templates dialog with scrollable template cards and per-template import actions.
   - Added lightweight SVG diagram previews that fit template nodes and edges into fixed preview viewports.
   - Added a navbar Templates button as the starter template entry point.
-  - Wired template import to replace the current Liveblocks canvas by clearing existing nodes and edges before adding template nodes and edges.
+  - Wired template import to replace the current Liveblocks canvas atomically with the selected template flow.
   - Fit the React Flow viewport after a starter template is imported.
+- Canvas template and label bug review:
+  - Replaced connection edge creation with explicit unique ID generation against the current edge list.
+  - Made starter template import replace Liveblocks flow storage in one mutation instead of deleting and adding from stale snapshots.
+  - Kept edge label draft text aligned with collaborative label updates when the edge is not actively being edited.
+  - Normalized node and edge label commits by trimming and collapsing whitespace.
+  - Memoized starter template preview node lookups by node ID.
 
 ## In Progress
 
@@ -242,3 +248,6 @@ Update this file whenever the current phase, active feature, or implementation s
 - Started and completed implementation of `context/feature-specs/18-starter-templates.md`.
 - Added starter template data, the template import modal with lightweight previews, a navbar entry point, and Liveblocks-backed canvas replacement on import.
 - Verification for feature 18: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed.
+- Completed canvas template and label bug review.
+- Fixed connection edge IDs, atomic template import replacement, collaborative edge label draft syncing, node label normalization, and template preview node lookup performance.
+- Verification for canvas template and label bug review: `npx.cmd tsc --noEmit --incremental false`, `npm.cmd run lint`, and elevated `npm.cmd run build` passed.
