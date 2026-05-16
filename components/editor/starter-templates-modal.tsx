@@ -247,9 +247,9 @@ export function StarterTemplatesModal({
       <EditorDialogContent
         title="Starter templates"
         description="Replace the current canvas with a predefined system design."
-        className="max-h-[min(42rem,calc(100vh-2rem))] max-w-4xl"
+        className="max-w-[min(1520px,95vw)]!"
       >
-        <ScrollArea className="h-[min(31rem,calc(100vh-13rem))] pr-4">
+        <ScrollArea className="pr-4">
           <div className="grid gap-4 md:grid-cols-3">
             {CANVAS_TEMPLATES.map((template) => (
               <article
