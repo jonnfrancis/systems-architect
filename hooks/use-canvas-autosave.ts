@@ -20,6 +20,27 @@ function serializeSnapshot(snapshot: CanvasSnapshot) {
   return JSON.stringify(snapshot);
 }
 
+async function readCanvasSaveErrorMessage(response: Response) {
+  const responseText = await response.text();
+
+  try {
+    const parsedBody = JSON.parse(responseText) as unknown;
+
+    if (
+      typeof parsedBody === "object" &&
+      parsedBody !== null &&
+      "error" in parsedBody &&
+      typeof parsedBody.error === "string"
+    ) {
+      return parsedBody.error;
+    }
+  } catch {
+    // Fall through to raw text handling below.
+  }
+
+  return responseText.trim() || "Canvas save failed.";
+}
+
 export function useCanvasAutosave({
   edges,
   enabled,
@@ -62,7 +83,7 @@ export function useCanvasAutosave({
         });
 
         if (!response.ok) {
-          throw new Error("Canvas save failed.");
+          throw new Error(await readCanvasSaveErrorMessage(response));
         }
 
         lastSavedSnapshotRef.current = serializedSnapshot;

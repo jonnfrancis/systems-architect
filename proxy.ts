@@ -2,7 +2,7 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 import { signInPath, signUpPath } from "@/lib/auth-routes";
 
-const selfAuthenticatedApiRoutes = ["/api/projects(.*)"];
+const selfAuthenticatedApiRoutes = ["/api/projects(.*)", "/api/liveblocks-auth"];
 const publicRoutes = [
   `${signInPath}(.*)`,
   `${signUpPath}(.*)`,

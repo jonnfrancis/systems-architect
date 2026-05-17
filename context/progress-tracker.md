@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Canvas deletion, handles, avatar host, and autosave hardening pass complete
+- Canvas autosave snapshot validation fix implemented
 
 ## Current Goal
 
-- Ready to build the next feature unit.
+- Verify autosave accepts normalized React Flow edge handle state.
 
 ## Completed
 
@@ -192,6 +192,18 @@ Update this file whenever the current phase, active feature, or implementation s
   - Treated missing saved canvas Blob content as an empty state.
   - Throttled cursor presence updates with `requestAnimationFrame`.
   - Added a Node runtime engine requirement of `>=20.9.0`.
+- Liveblocks auth HTML unauthorized review:
+  - Documented the likely cause of `Liveblocks Unauthorized: <!DOCTYPE html>...` in `context/current-issues.md`.
+  - Identified that `proxy.ts` protects `/api/liveblocks-auth` before the route handler can return a Liveblocks auth response.
+  - Suggested adding `/api/liveblocks-auth` to the self-authenticated API route allowlist while keeping access checks inside the route handler.
+- Canvas autosave 400 review:
+  - Documented the likely cause of `PUT /api/projects/{projectId}/canvas` returning `400` in `context/current-issues.md`.
+  - Identified a probable mismatch between React Flow `null` edge handles and the autosave validator's optional string handling.
+  - Suggested normalizing edge handles to `undefined`, accepting legacy `null` values in validation, and surfacing API error bodies in the autosave hook.
+  - Implemented client-side error body parsing so canvas save validation messages are no longer hidden behind a generic failure.
+  - Implemented normalized autosave snapshots so missing edge handles are omitted before persistence.
+  - Updated new edge creation to stop writing `null` source/target handles.
+  - Kept canvas snapshot validation backward-compatible with existing `null` handle values from prior Liveblocks state.
 
 ## In Progress
 

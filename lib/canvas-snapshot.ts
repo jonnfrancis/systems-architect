@@ -35,6 +35,7 @@ function isValidShortString(value: unknown, maxLength: number) {
 
 function isValidOptionalString(value: unknown, maxLength: number) {
   return (
+    value === null ||
     value === undefined ||
     (typeof value === "string" && value.length <= maxLength)
   );
@@ -163,7 +164,23 @@ export function createCanvasSnapshot(
   edges: CanvasEdge[],
 ): CanvasSnapshot {
   return {
-    edges,
-    nodes,
+    edges: edges.map((edge) => ({
+      ...edge,
+      data: {
+        label: typeof edge.data?.label === "string" ? edge.data.label : "",
+      },
+      sourceHandle:
+        typeof edge.sourceHandle === "string" ? edge.sourceHandle : undefined,
+      targetHandle:
+        typeof edge.targetHandle === "string" ? edge.targetHandle : undefined,
+    })),
+    nodes: nodes.map((node) => ({
+      ...node,
+      data: {
+        color: node.data.color,
+        label: typeof node.data.label === "string" ? node.data.label : "",
+        shape: node.data.shape,
+      },
+    })),
   };
 }

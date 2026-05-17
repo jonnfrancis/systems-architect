@@ -461,6 +461,8 @@ function SyncedReactFlowCanvas({
     useState<ShapeDragPreviewState | null>(null);
   const [isSavedCanvasLoadResolved, setIsSavedCanvasLoadResolved] =
     useState(false);
+  const cursorPresenceFrameRef = useRef<number | null>(null);
+  const queuedCursorPositionRef = useRef<Liveblocks["Presence"]["cursor"]>(null);
   const previewFrameRef = useRef<number | null>(null);
   const queuedPreviewPositionRef = useRef<ShapeDragPreviewState["position"] | null>(
     null,
@@ -667,6 +669,10 @@ function SyncedReactFlowCanvas({
           signal: abortController.signal,
         });
 
+        if (response.status === 404) {
+          return;
+        }
+
         if (!response.ok) {
           throw new Error("Saved canvas load failed.");
         }
@@ -725,17 +731,37 @@ function SyncedReactFlowCanvas({
     (event: MouseEvent<HTMLDivElement>) => {
       const bounds = event.currentTarget.getBoundingClientRect();
 
-      updateMyPresence({
-        cursor: {
-          x: event.clientX - bounds.left,
-          y: event.clientY - bounds.top,
-        },
+      queuedCursorPositionRef.current = {
+        x: event.clientX - bounds.left,
+        y: event.clientY - bounds.top,
+      };
+
+      if (cursorPresenceFrameRef.current !== null) {
+        return;
+      }
+
+      cursorPresenceFrameRef.current = window.requestAnimationFrame(() => {
+        cursorPresenceFrameRef.current = null;
+
+        if (!queuedCursorPositionRef.current) {
+          return;
+        }
+
+        updateMyPresence({
+          cursor: queuedCursorPositionRef.current,
+        });
       });
     },
     [updateMyPresence],
   );
 
   const handleMouseLeave = useCallback(() => {
+    if (cursorPresenceFrameRef.current !== null) {
+      window.cancelAnimationFrame(cursorPresenceFrameRef.current);
+      cursorPresenceFrameRef.current = null;
+    }
+
+    queuedCursorPositionRef.current = null;
     updateMyPresence({ cursor: null });
   }, [updateMyPresence]);
 
@@ -784,10 +810,10 @@ function SyncedReactFlowCanvas({
         id: createConnectionEdgeId(connection, edges),
         markerEnd: defaultCanvasEdgeOptions.markerEnd,
         source: connection.source,
-        sourceHandle: connection.sourceHandle,
+        sourceHandle: connection.sourceHandle ?? undefined,
         style: defaultCanvasEdgeOptions.style,
         target: connection.target,
-        targetHandle: connection.targetHandle,
+        targetHandle: connection.targetHandle ?? undefined,
         type: CANVAS_EDGE_TYPE,
       };
 
@@ -828,6 +854,10 @@ function SyncedReactFlowCanvas({
 
   useEffect(() => {
     return () => {
+      if (cursorPresenceFrameRef.current !== null) {
+        window.cancelAnimationFrame(cursorPresenceFrameRef.current);
+      }
+
       updateMyPresence({ cursor: null });
     };
   }, [updateMyPresence]);

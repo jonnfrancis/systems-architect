@@ -115,3 +115,59 @@ Add img.clerk.com to the allowed image hostnames in next.config.ts using the cor
 - Do not change canvas node or edge rendering behaviour
 - Do not break existing autosave, presence, or collaboration logic
 - npm run build passes
+
+## Liveblocks Auth HTML Unauthorized Review
+
+### Findings
+
+- The browser error shows Liveblocks receiving an HTML document from its auth request instead of a Liveblocks auth response.
+- `CanvasWorkspace` configures `LiveblocksProvider` with `authEndpoint="/api/liveblocks-auth"`, so every canvas room join depends on that endpoint returning the expected Liveblocks token response.
+- `app/api/liveblocks-auth/route.ts` already performs the correct project membership checks and returns JSON-style errors for unauthenticated or forbidden access.
+- `proxy.ts` currently marks only `/api/projects(.*)` as a self-authenticated API route. Because `/api/liveblocks-auth` is not included, Clerk middleware can protect/intercept the auth POST before the Liveblocks route handler runs.
+- When Clerk middleware intercepts that request, the response can be an HTML sign-in/error page. Liveblocks then reports `Liveblocks Unauthorized: <!DOCTYPE html>...`, and the canvas fails because `RoomProvider` cannot authorize the room.
+- A second possible issue is opening a literal or inaccessible route such as `/editor/editorId`. If `editorId` is not an accessible project ID, the Liveblocks auth route should return a `403` from `getAccessibleProject`. That would still block the canvas, but it should be a JSON failure rather than the pasted HTML body.
+
+### Suggested Fix
+
+- Add `/api/liveblocks-auth` to `selfAuthenticatedApiRoutes` in `proxy.ts`, matching the existing `/api/projects(.*)` pattern.
+- Keep authentication and project access enforcement inside `app/api/liveblocks-auth/route.ts`, where the route can return predictable `401`, `403`, or Liveblocks authorization responses.
+- Verify that `/editor/[roomId]` is opened with an actual project ID that the signed-in user owns or collaborates on.
+
+### Verification Plan
+
+- While signed in, open a real `/editor/{projectId}` workspace and confirm `POST /api/liveblocks-auth` no longer returns `text/html`.
+- Confirm the same request returns a Liveblocks authorization response for accessible projects.
+- Confirm unauthenticated access returns the route handler's JSON `401` response.
+- Confirm inaccessible project IDs return the route handler's JSON `403` response.
+
+## Canvas Autosave 400 Review
+
+### Findings
+
+- The failing request is `PUT /api/projects/ghost-ai-system-316i17/canvas`, and the route returns `400`, which means the request reached application code and was rejected before Vercel Blob persistence.
+- `hooks/use-canvas-autosave.ts` posts the serialized output of `createCanvasSnapshot(nodes, edges)` directly to the canvas route.
+- `app/api/projects/[projectId]/canvas/route.ts` returns `400` when the request body is invalid JSON or when `isCanvasSnapshot(parsed.body)` rejects the snapshot.
+- The hook currently throws a generic `Canvas save failed.` error without reading the route response body, so the browser console hides the exact validation message from the API.
+- The most likely schema mismatch is in optional React Flow edge handle fields. `handleConnect` stores `connection.sourceHandle` and `connection.targetHandle` directly, and React Flow connection handle values can be `string | null`. The hardened snapshot validator accepts `undefined` or `string`, but not `null`, through `isValidOptionalString`.
+- If an edge contains `sourceHandle: null` or `targetHandle: null`, `isCanvasSnapshot` rejects the whole canvas and the API returns `400`.
+
+### Suggested Fix
+
+- Normalize edge handles before saving or before edge creation so optional React Flow handle fields are omitted instead of persisted as `null`.
+- The smallest source fix is in `handleConnect`: assign `sourceHandle: connection.sourceHandle ?? undefined` and `targetHandle: connection.targetHandle ?? undefined`.
+- Also consider making the validator backward-compatible by accepting `null` for optional handle fields, because already-synced Liveblocks state or old saved snapshots may contain `null`.
+- Update `useCanvasAutosave` to read the API error response and include its `error` message in the thrown error. That would make future autosave failures identify the rejected field instead of only logging a generic failure.
+
+### Verification Plan
+
+- Create two nodes, connect them, wait for autosave, and confirm `PUT /api/projects/{projectId}/canvas` returns `200`.
+- Repeat with imported starter templates and with manually-created edges.
+- Confirm DevTools request payload does not include `sourceHandle: null` or `targetHandle: null`, or confirm the validator intentionally accepts those values.
+- Confirm the browser console shows the server-provided error message if the API still returns a non-OK response.
+
+### Fix Applied
+
+- Updated new canvas edge creation to omit missing handles instead of storing `null` values.
+- Updated `createCanvasSnapshot` to normalize autosave payloads, including converting existing non-string handle values to omitted optional fields before the request is sent.
+- Kept the API validator backward-compatible with existing Liveblocks or saved canvas state that may already contain `null` handle fields.
+- Preserved strict route-level snapshot validation so malformed canvas bodies are still rejected before Blob persistence.
